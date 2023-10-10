@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # SCRIPT VERSION
-USER_SETUP_VER=4
+USER_SETUP_VER=6
 USER_SETUP_VER_FILE="$HOME/.bazzite-configured"
 USER_SETUP_VER_RAN=$(cat $USER_SETUP_VER_FILE)
 
@@ -81,8 +81,14 @@ else
     echo 'Configuring search replacement with Steam Deck Keyboard support'
     gnome-extensions enable search-light@icedman.github.com
 
+    echo 'Enabling Appindicator Support'
+    gnome-extenisons enable appindicatorsupport@rgcjonas.gmail.com
+
     echo 'Setting mouse input profile'
     gsettings set org.gnome.desktop.peripherals.mouse accel-profile "flat"
+
+    echo 'Adjusting trackpad settings'
+    gsettings set org.gnome.desktop.peripherals.touchpad send-events "enabled"
 
     echo 'Setting default power settings'
     gsettings set org.gnome.desktop.session idle-delay 0
@@ -111,9 +117,10 @@ else
 fi
 
 # Steam Patch setup
-if [[ $IMAGE_NAME =~ "deck" || $IMAGE_NAME =~ "ally" ]]; then
-  if [[ ":ROG Ally RC71L_RC71L:AYA NEO:AYANEO:AIR Plus:ONEXPLAYER:AOKZOE:G1619-01:G1621-02:MicroPC:G1619-01:G1621-02:MicroPC:AYA NEO:AYANEO:AIR Plus:AOKZOE:ONEXPLAYER:" =~ ":$SYS_ID:" ]]; then
-      pkexec /usr/bin/bazzite-enable-steam-patch "$USER"
+if [[ $IMAGE_NAME =~ "deck" || $IMAGE_NAME =~ "ally" || $IMAGE_NAME =~ "framegame" ]]; then
+  if [[ ! ":Jupiter:" =~ ":$SYS_ID:" ]]; then
+    echo 'Enabling Steam-Patch'
+    pkexec /usr/bin/bazzite-enable-steam-patch "$USER"
   fi
 fi
 

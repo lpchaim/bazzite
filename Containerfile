@@ -37,6 +37,7 @@ RUN wget https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/repo/fedora-$
     wget https://copr.fedorainfracloud.org/coprs/ublue-os/staging/repo/fedora-$(rpm -E %fedora)/ublue-os-staging-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_ublue-os-staging.repo && \
     wget https://copr.fedorainfracloud.org/coprs/ublue-os/bling/repo/fedora-$(rpm -E %fedora)/ublue-os-bling-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_ublue-os-bling.repo && \
     wget https://copr.fedorainfracloud.org/coprs/kylegospo/system76-scheduler/repo/fedora-$(rpm -E %fedora)/kylegospo-system76-scheduler-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-system76-scheduler.repo && \
+    wget https://copr.fedorainfracloud.org/coprs/kylegospo/LatencyFleX/repo/fedora-$(rpm -E %fedora)/kylegospo-LatencyFleX-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-latencyflex.repo && \
     wget https://copr.fedorainfracloud.org/coprs/kylegospo/hl2linux-selinux/repo/fedora-$(rpm -E %fedora)/kylegospo-hl2linux-selinux-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-hl2linux-selinux.repo && \
     wget https://copr.fedorainfracloud.org/coprs/kylegospo/obs-vkcapture/repo/fedora-$(rpm -E %fedora)/kylegospo-obs-vkcapture-fedora-$(rpm -E %fedora).repo?arch=x86_64 -O /etc/yum.repos.d/_copr_kylegospo-obs-vkcapture.repo && \
     wget https://copr.fedorainfracloud.org/coprs/kylegospo/wallpaper-engine-kde-plugin/repo/fedora-$(rpm -E %fedora)/kylegospo-wallpaper-engine-kde-plugin-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-wallpaper-engine-kde-plugin.repo && \
@@ -57,7 +58,6 @@ RUN rpm-ostree override remove \
 # Install new packages
 RUN rpm-ostree install \
     ublue-update \
-    extest.i686 \
     discover-overlay \
     python3-pip \
     libadwaita \
@@ -105,6 +105,7 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         steamdeck-kde-presets-desktop \
         wallpaper-engine-kde-plugin \
         kdeconnectd \
+        extest.i686 \
         rom-properties-kf5 && \
     if [ ${FEDORA_MAJOR_VERSION} -lt 39 ]; then \
         rpm-ostree override replace \
@@ -142,6 +143,7 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
             gnome-control-center-filesystem \
     ; fi && \
     rpm-ostree install \
+        xwaylandvideobridge \
         steamdeck-backgrounds \
         gradience \
         gnome-randr-rust \
@@ -215,6 +217,10 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         wine-core \
         winetricks \
         protontricks \
+        latencyflex-vulkan-layer \
+        vkBasalt \
+        mangohud \
+        vulkan-tools \
 ; fi
 
 # Cleanup & Finalize
@@ -240,6 +246,7 @@ RUN /tmp/image-info.sh && \
     sed -i 's@enabled=1@enabeld=0@g' /etc/yum.repos.d/_copr_ublue-os-staging.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_ublue-os-bling.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-system76-scheduler.repo && \
+    sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-latencyflex.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-hl2linux-selinux.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-obs-vkcapture.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-wallpaper-engine-kde-plugin.repo && \
@@ -297,12 +304,12 @@ ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION}"
 COPY system_files/shared system_files/deck/shared system_files/deck/${BASE_IMAGE_NAME} /
 
 # Setup Copr repos
-RUN wget https://copr.fedorainfracloud.org/coprs/kylegospo/LatencyFleX/repo/fedora-$(rpm -E %fedora)/kylegospo-LatencyFleX-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-latencyflex.repo && \
-    if [[ "${IMAGE_FLAVOR}" = "main" || "${IMAGE_NAME}" = "nvidia" ]]; then \
+RUN if [[ "${IMAGE_FLAVOR}" = "main" || "${IMAGE_NAME}" = "nvidia" ]]; then \
         sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo \
     ; fi && \
     sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_kylegospo-bazzite.repo && \
     sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_kylegospo-bazzite-multilib.repo && \
+    sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_kylegospo-latencyflex.repo && \
     sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_kylegospo-hl2linux-selinux.repo && \
     sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_kylegospo-obs-vkcapture.repo && \
     sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_kylegospo-wallpaper-engine-kde-plugin.repo && \
@@ -389,7 +396,7 @@ RUN rpm-ostree install \
     xz --check=crc32 /tmp/linux-firmware-neptune/cs35l41-dsp1-spk-{cali.bin,cali.wmfw,prot.bin,prot.wmfw} && \
     mv -vf /tmp/linux-firmware-neptune/* /usr/lib/firmware/cirrus/ && \
     rm -rf /tmp/linux-firmware-neptune && \
-    wget $(jq -r '.assets[].browser_download_url | select(endswith("steam-patch"))' <<< $(curl -s 'https://api.github.com/repos/Maclay74/steam-patch/releases' | jq -r "first(.[] | select(.prerelease == "false"))")) -O /usr/bin/steam-patch && \
+    wget $(jq -r '.assets[].browser_download_url | select(endswith("steam-patch"))' <<< $(curl -s 'https://api.github.com/repos/KyleGospo/steam-patch/releases' | jq -r "first(.[] | select(.prerelease == "false"))")) -O /usr/bin/steam-patch && \
     chmod +x /usr/bin/steam-patch
 
 # Install Steam and Lutris into their own OCI layer
@@ -451,7 +458,6 @@ RUN rpm-ostree install \
         rpm-ostree override remove \
             gamemode \
             gnome-shell-extension-gamemode \
-            gnome-shell-extension-appindicator \
     ; fi
 
 # Cleanup & Finalize
