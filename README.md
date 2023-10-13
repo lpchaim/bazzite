@@ -1,8 +1,5 @@
 <p align="center">
-  <img src="/repo_content/logo.png?raw=true" alt="Bazzite Logo"/>
-</p>
-<p align="center">
-  <img src="/repo_content/text_logo.png?raw=true" alt="Bazzite"/>
+  <img src="/repo_content/Bazzite_Tagline.svg?raw=true" alt="Bazzite"/>
 </p>
 
 [![build-bazzite](https://github.com/ublue-os/bazzite/actions/workflows/build.yml/badge.svg)](https://github.com/ublue-os/bazzite/actions/workflows/build.yml)
@@ -181,9 +178,9 @@ Check out the [FAQ](https://universal-blue.org/images/bazzite/FAQ/) for other to
 ![KDE VGUI2 Theme](/repo_content/desktop2.png?raw=true "KDE VGUI2 Theme")
 ![Steam Game Mode](/repo_content/gamemode.png?raw=true "Steam Game Mode")
 ![Waydroid](/repo_content/waydroid.png?raw=true "Waydroid")
+![Distrobox Terminals](/repo_content/distrobox.png?raw=true "Distrobox Terminals")
 ![GNOME Vapor Theme](/repo_content/gnome1.png?raw=true "GNOME Vapor Theme")
 ![GNOME VGUI2 Theme](/repo_content/gnome2.png?raw=true "GNOME VGUI2 Theme")
-![Distrobox Terminals](/repo_content/distrobox.png?raw=true "Distrobox Terminals")
 
 Check out our [newsletters](https://universal-blue.org/blog/category/bazzite/) that get published on a regular basis for updates on the project.
 
@@ -254,6 +251,7 @@ cosign verify --key cosign.pub ghcr.io/ublue-os/bazzite
 
 Bazzite is a community effort and wouldn't exist without everyone's support. Below are some of the people who've helped us along the way:
 
+- [rei0260](https://discord.com/users/rei0260) - For creating our logo and overall branding.
 - [evlaV](https://gitlab.com/evlaV) - For making Valve's code available and for being [this person](https://xkcd.com/2347/).
 - [ChimeraOS](https://chimeraos.org/) - For gamescope-session and for valuable support along the way.
 - [Jovian-NixOS](https://github.com/Jovian-Experiments) - For supporting us with technical issues and for creating a similar project. Seriously, go check it out. It's our Nix-based cousin.

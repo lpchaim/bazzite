@@ -12,15 +12,26 @@ ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME}"
 ARG IMAGE_FLAVOR="${IMAGE_FLAVOR}"
 ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION}"
 
-COPY system_files/shared system_files/desktop/shared system_files/desktop/${BASE_IMAGE_NAME} /
+COPY system_files/desktop/shared system_files/desktop/${BASE_IMAGE_NAME} /
 
 # Add ublue packages, add needed negativo17 repo and then immediately disable due to incompatibility with RPMFusion
 COPY --from=ghcr.io/ublue-os/akmods:main-${FEDORA_MAJOR_VERSION} /rpms /tmp/akmods-rpms
 RUN if [[ "${IMAGE_FLAVOR}" = "main" || "${IMAGE_NAME}" = "nvidia" ]]; then \
     sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo && \
     wget https://negativo17.org/repos/fedora-multimedia.repo -O /etc/yum.repos.d/negativo17-fedora-multimedia.repo && \
+    if [[ "${FEDORA_MAJOR_VERSION}" -ge "39" ]]; then \
+        rpm-ostree install \
+            /tmp/akmods-rpms/kmods/*xpadneo*.rpm \
+            /tmp/akmods-rpms/kmods/*xpad-noone*.rpm \
+            /tmp/akmods-rpms/kmods/*xone*.rpm \
+            /tmp/akmods-rpms/kmods/*openrazer*.rpm \
+            /tmp/akmods-rpms/kmods/*v4l2loopback*.rpm \
+            /tmp/akmods-rpms/kmods/*wl*.rpm \
+    ; else \
+        rpm-ostree install \
+            /tmp/akmods-rpms/kmods/*evdi*.rpm \
+    ; fi && \
     rpm-ostree install \
-        /tmp/akmods-rpms/kmods/*evdi*.rpm \
         /tmp/akmods-rpms/kmods/*gcadapter_oc*.rpm \
         /tmp/akmods-rpms/kmods/*nct6687*.rpm \
         /tmp/akmods-rpms/kmods/*openrgb*.rpm \
@@ -224,6 +235,7 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
 ; fi
 
 # Cleanup & Finalize
+COPY system_files/shared /
 RUN /tmp/image-info.sh && \
     rm /usr/share/applications/shredder.desktop && \
     rm /usr/share/vulkan/icd.d/lvp_icd.*.json && \
@@ -301,7 +313,7 @@ ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME}"
 ARG IMAGE_FLAVOR="${IMAGE_FLAVOR}"
 ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION}"
 
-COPY system_files/shared system_files/deck/shared system_files/deck/${BASE_IMAGE_NAME} /
+COPY system_files/deck/shared system_files/deck/${BASE_IMAGE_NAME} /
 
 # Setup Copr repos
 RUN if [[ "${IMAGE_FLAVOR}" = "main" || "${IMAGE_NAME}" = "nvidia" ]]; then \
@@ -461,6 +473,7 @@ RUN rpm-ostree install \
     ; fi
 
 # Cleanup & Finalize
+COPY system_files/shared /
 RUN /tmp/image-info.sh && \
     rm /usr/share/applications/wine*.desktop && \
     ln -s /usr/bin/steamos-logger /usr/bin/steamos-info && \
