@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.3.0](https://github.com/lpchaim/bazzite/compare/v1.2.2...v1.3.0) (2023-10-13)
+
+
+### Features
+
+* add zsh ([7648ee6](https://github.com/lpchaim/bazzite/commit/7648ee62c4be0cfcd94c37ce71a94d63dae34e52))
+* **ci:** Build images based on Fedora 39 ([#332](https://github.com/lpchaim/bazzite/issues/332)) ([631423b](https://github.com/lpchaim/bazzite/commit/631423b360c69158382f17f20260ea05f2f8cc09))
+* enable automounting of hugepages with 1GB pagesize if the karg hugepagesz=1G is present ([#425](https://github.com/lpchaim/bazzite/issues/425)) ([24b3a66](https://github.com/lpchaim/bazzite/commit/24b3a66f36805c95f08c57cda775e28bb9b2fcdf))
+* Enable Steam Patch for any hardware other than Steam Deck, fixes resolution issue that requires desktop gamers to select "Native" for every title in gamemode. ([3a9577c](https://github.com/lpchaim/bazzite/commit/3a9577cdfc1422ee8be44b755de272a52c7421bf))
+* **gnome:** Add optional shell theme that makes appindicators function like a proper tray ([de76430](https://github.com/lpchaim/bazzite/commit/de76430f553b5ddadebc5392234e64396b74d675))
+* **gnome:** Add xwaylandvideobridge ([4b91901](https://github.com/lpchaim/bazzite/commit/4b919010b34d3625d19a5afa0c9a5f8af3479c80))
+* **gnome:** Move from extest to libei ([77a6671](https://github.com/lpchaim/bazzite/commit/77a667162859dd48a4aa772d7919a6bf1505e4c5))
+* **gnome:** Restore appindicator ([4b54774](https://github.com/lpchaim/bazzite/commit/4b547745072cff586f3b3bb81952e3747cccd79e))
+* **gnome:** Switch to new Logo Menu fork ([98c2167](https://github.com/lpchaim/bazzite/commit/98c21679cefc36b935340e09a50e09d4030eb730))
+* Looking glass shm OOB auto generation and support ([#424](https://github.com/lpchaim/bazzite/issues/424)) ([1682676](https://github.com/lpchaim/bazzite/commit/168267634b3b5f174fc2ab65ab2c240da3e1be9b))
+* restore original steam deck logo ([08830bc](https://github.com/lpchaim/bazzite/commit/08830bc1f5ef9e1ba785a5bc15d053dab52a0c22))
+* Throw an error if a flatpak fails to install in bazzite-flatpak-manager, add notification with icon and restart every 30 seconds until it can complete ([d4ffe57](https://github.com/lpchaim/bazzite/commit/d4ffe576564ffc081adf41dc89c3f8fa438cdc0f))
+
+
+### Bug Fixes
+
+* Correct issue detecting nvidia flavor ([f6090db](https://github.com/lpchaim/bazzite/commit/f6090db760e35c7716c2b3902cf2a6b4d5ba831b))
+* Correct issue with opentabletdriver just command if ~/.config/systemd/user folder doesn't exist ([f42737a](https://github.com/lpchaim/bazzite/commit/f42737a09a30c3371bc3753bb8c0f36eef8fc3dc))
+* Correct issue with screen rotation on non-deck hardware ([1d84e3f](https://github.com/lpchaim/bazzite/commit/1d84e3f319dd05e7d8adfb6489f7030b7ec9a9be))
+* Correct PathExists check in steam-patch@.service ([84a0e36](https://github.com/lpchaim/bazzite/commit/84a0e36c6fd4b72898640272fb65c602d862152b))
+* **gnome:** Remove gnome-initial-setup, our ISO installer handles this a different way. ([42f97f0](https://github.com/lpchaim/bazzite/commit/42f97f05bd1537baa82c8035c7ce0c1881c7b89a))
+* install Krita instead of Ardour when user requests Krita ([#420](https://github.com/lpchaim/bazzite/issues/420)) ([793ea46](https://github.com/lpchaim/bazzite/commit/793ea46ef173849a20bd2af303b55c13eb9d3579))
+* **nvidia:** Add LatencyFlex, vkBasalt, MangoHUD, and Vulkan-Tools packages from Deck images. ([5b0ca63](https://github.com/lpchaim/bazzite/commit/5b0ca63022f6ae137bf275c777fb925141661898))
+* Re-run bazzite-hardware-setup and bazzite-user-setup if Fedora version changes ([cc41dd3](https://github.com/lpchaim/bazzite/commit/cc41dd34f38730454f80550acd05d985d332fb7a))
+
 ## [1.2.2](https://github.com/lpchaim/bazzite/compare/v1.3.0...v1.2.2) (2023-10-13)
 
 
