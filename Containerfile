@@ -91,6 +91,7 @@ RUN rpm-ostree install \
     tailscale \
     btop \
     fish \
+    zsh \
     xdotool \
     wmctrl \
     libcec \
