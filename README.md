@@ -1,8 +1,5 @@
 <p align="center">
-  <img src="/repo_content/logo.png?raw=true" alt="Bazzite Logo"/>
-</p>
-<p align="center">
-  <img src="/repo_content/text_logo.png?raw=true" alt="Bazzite"/>
+  <img src="/repo_content/Bazzite_Tagline.svg?raw=true" alt="Bazzite"/>
 </p>
 
 [![build-bazzite](https://github.com/ublue-os/bazzite/actions/workflows/build.yml/badge.svg)](https://github.com/ublue-os/bazzite/actions/workflows/build.yml)
@@ -80,7 +77,7 @@ or for devices with Nvidia GPUs:
 rpm-ostree rebase ostree-unverified-registry:ghcr.io/ublue-os/bazzite-nvidia:latest
 ```
 
-**For users with Secure Boot enabled:** Once you've installed or rebased to a Nvidia build, [be sure to follow step 3 from the ublue-os/nvidia guide](https://universal-blue.org/images/nvidia/#3-enable-secure-boot-support).
+**For users with Secure Boot enabled:** Run `just enroll-secure-boot-key` and enter the password `ublue-os` if prompted to enroll the required key.
 
 ### Steam Deck/Home Theater PCs (HTPCs)
 > [!IMPORTANT]  
@@ -171,7 +168,7 @@ Bazzite started as a project to resolve some of the issues that plague SteamOS, 
 
 Despite this project also being image-based, you are able to install any Fedora package straight from the command line. These packages will persist across updates <sub><sup>(So go ahead and install that obscure VPN software you spent an hour trying to get working in SteamOS)</sup></sub>. Additionally, Bazzite is updated multiple times a week with packages from upstream Fedora, giving you the best possible performance and latest features - all on a stable base.
 
-Bazzite ships with the latest Linux kernel and SELinux enabled by default with full support for secure boot <sub><sup>(Run `just enroll-secure-boot-keys` and enter the password `ublue-os` if prompted to enroll our key)</sup></sub> and disk encryption, making this a sensible solution for general computing. <sup><sub>(Yes, you can print from Bazzite)</sub></sup>
+Bazzite ships with the latest Linux kernel and SELinux enabled by default with full support for secure boot <sub><sup>(Run `just enroll-secure-boot-key` and enter the password `ublue-os` if prompted to enroll our key)</sup></sub> and disk encryption, making this a sensible solution for general computing. <sup><sub>(Yes, you can print from Bazzite)</sub></sup>
 
 Check out the [FAQ](https://universal-blue.org/images/bazzite/FAQ/) for other topics surrounding the project.
 
@@ -181,9 +178,9 @@ Check out the [FAQ](https://universal-blue.org/images/bazzite/FAQ/) for other to
 ![KDE VGUI2 Theme](/repo_content/desktop2.png?raw=true "KDE VGUI2 Theme")
 ![Steam Game Mode](/repo_content/gamemode.png?raw=true "Steam Game Mode")
 ![Waydroid](/repo_content/waydroid.png?raw=true "Waydroid")
+![Distrobox Terminals](/repo_content/distrobox.png?raw=true "Distrobox Terminals")
 ![GNOME Vapor Theme](/repo_content/gnome1.png?raw=true "GNOME Vapor Theme")
 ![GNOME VGUI2 Theme](/repo_content/gnome2.png?raw=true "GNOME VGUI2 Theme")
-![Distrobox Terminals](/repo_content/distrobox.png?raw=true "Distrobox Terminals")
 
 Check out our [newsletters](https://universal-blue.org/blog/category/bazzite/) that get published on a regular basis for updates on the project.
 
@@ -246,19 +243,15 @@ These images are signed with sigstore's [cosign](https://docs.sigstore.dev/cosig
 cosign verify --key cosign.pub ghcr.io/ublue-os/bazzite
 ```
 
-## [![Repography logo](https://images.repography.com/logo.svg)](https://repography.com) / Recent Activity [![Time period](https://images.repography.com/35181738/ublue-os/bazzite/recent-activity/Th70YH5TPWj_xtgglSDUV9CY1CtpE2JkmmfhzTTj4Vg/D6pCB2LvmFrU9T9B0Kp9QIfQCmY5U2q5aHoeVk0Tdds_badge.svg)](https://repography.com)
-[![Timeline graph](https://images.repography.com/35181738/ublue-os/bazzite/recent-activity/Th70YH5TPWj_xtgglSDUV9CY1CtpE2JkmmfhzTTj4Vg/D6pCB2LvmFrU9T9B0Kp9QIfQCmY5U2q5aHoeVk0Tdds_timeline.svg)](https://github.com/ublue-os/bazzite/commits)
-[![Issue status graph](https://images.repography.com/35181738/ublue-os/bazzite/recent-activity/Th70YH5TPWj_xtgglSDUV9CY1CtpE2JkmmfhzTTj4Vg/D6pCB2LvmFrU9T9B0Kp9QIfQCmY5U2q5aHoeVk0Tdds_issues.svg)](https://github.com/ublue-os/bazzite/issues)
-[![Pull request status graph](https://images.repography.com/35181738/ublue-os/bazzite/recent-activity/Th70YH5TPWj_xtgglSDUV9CY1CtpE2JkmmfhzTTj4Vg/D6pCB2LvmFrU9T9B0Kp9QIfQCmY5U2q5aHoeVk0Tdds_prs.svg)](https://github.com/ublue-os/bazzite/pulls)
-[![Top contributors](https://images.repography.com/35181738/ublue-os/bazzite/recent-activity/Th70YH5TPWj_xtgglSDUV9CY1CtpE2JkmmfhzTTj4Vg/D6pCB2LvmFrU9T9B0Kp9QIfQCmY5U2q5aHoeVk0Tdds_users.svg)](https://github.com/ublue-os/bazzite/graphs/contributors)
+### Contributor Metrics
 
-## [![Repography logo](https://images.repography.com/logo.svg)](https://repography.com) / Top Contributors
-[![Top contributors](https://images.repography.com/35181738/ublue-os/bazzite/top-contributors/Th70YH5TPWj_xtgglSDUV9CY1CtpE2JkmmfhzTTj4Vg/D6pCB2LvmFrU9T9B0Kp9QIfQCmY5U2q5aHoeVk0Tdds_table.svg)](https://github.com/ublue-os/bazzite/graphs/contributors)
+![Bazzite](https://repobeats.axiom.co/api/embed/86b500d79c613015ad16f56df76c8e13f3fd98ae.svg "Repobeats analytics image")
 
 ## Special Thanks
 
 Bazzite is a community effort and wouldn't exist without everyone's support. Below are some of the people who've helped us along the way:
 
+- [rei0260](https://discord.com/users/rei0260) - For creating our logo and overall branding.
 - [evlaV](https://gitlab.com/evlaV) - For making Valve's code available and for being [this person](https://xkcd.com/2347/).
 - [ChimeraOS](https://chimeraos.org/) - For gamescope-session and for valuable support along the way.
 - [Jovian-NixOS](https://github.com/Jovian-Experiments) - For supporting us with technical issues and for creating a similar project. Seriously, go check it out. It's our Nix-based cousin.

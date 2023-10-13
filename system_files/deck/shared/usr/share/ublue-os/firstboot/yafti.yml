@@ -67,7 +67,7 @@ screens:
           - Install Nix Package Support: sudo -A just --unstable install-nix
           - Install Fleek (Requires Nix): just --unstable install-fleek
         Oversteer:
-          description: Application to control Logitech steering wheels
+          description: Application to control supported steering wheels
           default: false
           packages:
           - Install Oversteer: just --unstable install-oversteer
@@ -210,7 +210,7 @@ screens:
           - Inkscape: org.inkscape.Inkscape
           - Joplin: net.cozic.joplin_desktop
           - Kdenlive: org.kde.kdenlive
-          - Krita: org.ardour.Ardour
+          - Krita: org.kde.krita
           - LibreOffice: org.libreoffice.LibreOffice
           - Obsidian: md.obsidian.Obsidian
           - OnlyOffice: org.onlyoffice.desktopeditors
