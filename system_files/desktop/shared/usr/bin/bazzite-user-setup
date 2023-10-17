@@ -11,11 +11,11 @@ USER_SETUP_VER=8
 USER_SETUP_VER_FILE="$HOME/.bazzite-configured"
 USER_SETUP_VER_RAN=$(cat $USER_SETUP_VER_FILE)
 USER_SETUP_FEDORA_VER_FILE="$HOME/.bazzite-configured-fedora-version"
-USER_SETUP_FEDORA_VER_RAN=$(cat $USER_SETUP_FEDORA_VERSION)
+USER_SETUP_FEDORA_VER_RAN=$(cat $USER_SETUP_FEDORA_VER_FILE)
 
 # Run script if updated
 if [[ -f $USER_SETUP_VER_FILE && $USER_SETUP_VER = $USER_SETUP_VER_RAN ]]; then
-  if [[ -f USER_SETUP_FEDORA_VER_FILE && $FEDORA_VERSION = $USER_SETUP_FEDORA_VER_RAN ]]; then
+  if [[ -f $USER_SETUP_FEDORA_VER_FILE && $FEDORA_VERSION = $USER_SETUP_FEDORA_VER_RAN ]]; then
     echo "User setup has already run. Exiting..."
     exit 0
   fi
@@ -53,24 +53,18 @@ else
   gnome-extensions enable gsconnect@andyholmes.github.io
   gnome-extensions disable background-logo@fedorahosted.org
 
-  echo 'Enabling VRR & Fractional Scaling'
-  gsettings set org.gnome.mutter experimental-features "['variable-refresh-rate','scale-monitor-framebuffer']"
-
-  echo 'Disabling automatic GNOME Software updates'
-  gsettings set org.gnome.software download-updates false
-  gsettings set org.gnome.software download-updates-notify false
-
   echo 'Adjusting Nautilus settings'
   gsettings set org.gnome.nautilus.preferences show-create-link true
-  gsettings set org.gtk.gtk4.settings.file-chooser sort-directories-first true
 
   echo 'Installing Gradience presets'
   mkdir -p "$HOME/.var/app/com.github.GradienceTeam.Gradience/config/presets/user/"
   if [[ ! -f "$HOME/.var/app/com.github.GradienceTeam.Gradience/config/presets/user/vapor.json" ]]; then
-    ln -s /usr/share/ublue-os/bazzite/themes/vapor.json $HOME/.var/app/com.github.GradienceTeam.Gradience/config/presets/user/vapor.json
+    rm -f $HOME/.var/app/com.github.GradienceTeam.Gradience/config/presets/user/vapor.json
+    cp /usr/share/ublue-os/bazzite/themes/vapor.json $HOME/.var/app/com.github.GradienceTeam.Gradience/config/presets/user/vapor.json
   fi
   if [[ ! -f "$HOME/.var/app/com.github.GradienceTeam.Gradience/config/presets/user/vgui2.json" ]]; then
-    ln -s /usr/share/ublue-os/bazzite/themes/vgui2.json $HOME/.var/app/com.github.GradienceTeam.Gradience/config/presets/user/vgui2.json
+    rm -f $HOME/.var/app/com.github.GradienceTeam.Gradience/config/presets/user/vgui2.json
+    cp /usr/share/ublue-os/bazzite/themes/vgui2.json $HOME/.var/app/com.github.GradienceTeam.Gradience/config/presets/user/vgui2.json
   fi
 
   if [[ $IMAGE_NAME =~ "deck" || $IMAGE_NAME =~ "ally" || $IMAGE_NAME =~ "framegame" ]]; then
@@ -142,19 +136,6 @@ if grep -qz 'fedora' <<< $(flatpak remotes); then
   flatpak remote-delete --user fedora --force
 fi
 flatpak remote-add --if-not-exists --user flathub /etc/flatpak/remotes.d/flathub.flatpakrepo
-
-# Remove bazzite-arch on Nvidia
-# We ship layered copies now due to nvidia fun(tm)
-if [[ $IMAGE_NAME =~ "nvidia"  ]]; then
-  if grep -qz "bazzite-arch" <<< $(distrobox list); then
-    distrobox-rm bazzite-arch --force
-    if [[ ${BASE_IMAGE_NAME} =~ 'kinoite' ]]; then
-      podman image rm bazzite-arch --force
-    else
-      podman image rm bazzite-arch-gnome --force
-    fi
-  fi
-fi
 
 # Prevent future executions
 echo "Writing state file"

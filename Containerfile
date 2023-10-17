@@ -82,9 +82,8 @@ RUN rpm-ostree install \
     input-remapper \
     system76-scheduler \
     hl2linux-selinux \
-    libobs_glcapture \
-    libobs_vkcapture \
-    obs-vkcapture \
+    obs-vkcapture.x86_64 \
+    obs-vkcapture.i686 \
     ladspa-caps-plugins \
     ladspa-noise-suppression-for-voice \
     tailscale \
@@ -101,6 +100,7 @@ RUN rpm-ostree install \
     lzip \
     libxcrypt-compat \
     mesa-libGLU \
+    vulkan-tools \
     twitter-twemoji-fonts \
     lato-fonts \
     fira-code-fonts && \
@@ -143,7 +143,9 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
             mutter-common \
             gnome-control-center \
             gnome-control-center-filesystem \
-            xorg-x11-server-Xwayland \
+            xorg-x11-server-Xwayland && \
+        rpm-ostree install \
+            gnome-shell-extension-tailscale-status \
     ; else \
         rpm-ostree override replace \
         --experimental \
@@ -151,7 +153,9 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
             mutter \
             mutter-common \
             gnome-control-center \
-            gnome-control-center-filesystem \
+            gnome-control-center-filesystem && \
+        rpm-ostree install \
+            gnome-shell-extension-tailscale-gnome-qs \
     ; fi && \
     rpm-ostree install \
         xwaylandvideobridge \
@@ -159,6 +163,7 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         gnome-randr-rust \
         gnome-shell-extension-user-theme \
         gnome-shell-extension-gsconnect \
+        nautilus-gsconnect \
         gnome-shell-extension-system76-scheduler \
         gnome-shell-extension-caribou-blocker \
         gnome-shell-extension-compiz-windows-effect \
@@ -166,7 +171,6 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         gnome-shell-extension-blur-my-shell \
         gnome-shell-extension-hanabi \
         gnome-shell-extension-gamerzilla \
-        gnome-shell-extension-tailscale-status \
         rom-properties-gtk3 \
         openssh-askpass && \
     rpm-ostree override remove \
@@ -176,16 +180,37 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         gnome-initial-setup \
 ; fi
 
+# Install gamescope-limiter patched Mesa and patched udisks2 (Needed for SteamOS SD card mounting)
+RUN if [[ "${FEDORA_MAJOR_VERSION}" -ge "39" ]]; then \
+        rpm-ostree override replace \
+            --experimental \
+            --from repo=copr:copr.fedorainfracloud.org:kylegospo:bazzite-multilib \
+                mesa-filesystem \
+                mesa-dri-drivers \
+                mesa-libEGL \
+                mesa-libEGL-devel \
+                mesa-libgbm \
+                mesa-libGL \
+                mesa-libglapi \
+                mesa-vulkan-drivers \
+    ; fi
+
 # Install ROCM and Waydroid on non-Nvidia images
 # Install Steam & Lutris on Nvidia images (Avoids numerous driver issues under Distrobox)
 RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
     rpm-ostree install \
         rocm-hip \
         rocm-opencl \
+        rocm-clinfo \
         waydroid \
         weston && \
     sed -i~ -E 's/=.\$\(command -v (nft|ip6?tables-legacy).*/=/g' /usr/lib/waydroid/data/scripts/waydroid-net.sh \
 ; else \
+    if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
+        rpm-ostree install \
+            mesa-libGL.i686 \
+            mesa-libEGL.i686 \
+    ;fi && \
     rpm-ostree install \
         vulkan-loader.i686 \
         alsa-lib.i686 \
@@ -199,8 +224,6 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         libXinerama.i686 \
         libXtst.i686 \
         libXScrnSaver.i686 \
-        mesa-libGL.i686 \
-        mesa-libEGL.i686 \
         NetworkManager-libnm.i686 \
         nss.i686 \
         pulseaudio-libs.i686 \
@@ -210,7 +233,8 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         libvdpau.i686 \
         libdbusmenu-gtk3.i686 \
         libatomic.i686 \
-        pipewire-alsa.i686 && \
+        pipewire-alsa.i686 \
+        clinfo && \
     sed -i '0,/enabled=0/s//enabled=1/' /etc/yum.repos.d/rpmfusion-nonfree-steam.repo && \
     sed -i '0,/enabled=1/s//enabled=0/' /etc/yum.repos.d/rpmfusion-nonfree.repo && \
     sed -i '0,/enabled=1/s//enabled=0/' /etc/yum.repos.d/rpmfusion-nonfree-updates.repo && \
@@ -229,9 +253,10 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         winetricks \
         protontricks \
         latencyflex-vulkan-layer \
-        vkBasalt \
-        mangohud \
-        vulkan-tools \
+        vkBasalt.x86_64 \
+        vkBasalt.i686 \
+        mangohud.x86_64 \
+        mangohud.i686 \
 ; fi
 
 # Cleanup & Finalize
@@ -328,26 +353,25 @@ RUN rpm-ostree install \
     /etc/akmods-rpms/steamdeck.rpm && \
     rm -rf /etc/akmods-rpms
 
-# Install gamescope-limiter patched Mesa and patched udisks2 (Needed for SteamOS SD card mounting)
 RUN if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
-    rpm-ostree override replace \
-        --experimental \
-        --from repo=copr:copr.fedorainfracloud.org:kylegospo:bazzite-multilib \
-            mesa-filesystem \
-            mesa-dri-drivers \
-            mesa-libEGL \
-            mesa-libEGL-devel \
-            mesa-libgbm \
-            mesa-libGL \
-            mesa-libglapi \
-            mesa-vulkan-drivers && \
-    rpm-ostree override replace \
-        --experimental \
-        --from repo=copr:copr.fedorainfracloud.org:kylegospo:bazzite \
-            udisks2 \
-            libudisks2 \
-            udisks2-btrfs \
-; fi
+        rpm-ostree override replace \
+            --experimental \
+            --from repo=copr:copr.fedorainfracloud.org:kylegospo:bazzite-multilib \
+                mesa-filesystem \
+                mesa-dri-drivers \
+                mesa-libEGL \
+                mesa-libEGL-devel \
+                mesa-libgbm \
+                mesa-libGL \
+                mesa-libglapi \
+                mesa-vulkan-drivers && \
+        rpm-ostree override replace \
+            --experimental \
+            --from repo=copr:copr.fedorainfracloud.org:kylegospo:bazzite \
+                udisks2 \
+                libudisks2 \
+                udisks2-btrfs \
+    ; fi
 
 # Configure KDE & GNOME
 RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
@@ -367,8 +391,6 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
 # Dock updater - done manually due to proprietary parts preventing it from being on Copr
 # Neptune firmware - done manually due to "TBD" license on needed audio firmware
 RUN rpm-ostree install \
-    mesa-va-drivers \
-    vulkan-tools \
     jupiter-fan-control \
     jupiter-hw-support-btrfs \
     powerbuttond \
@@ -378,8 +400,10 @@ RUN rpm-ostree install \
     steam_notif_daemon \
     ryzenadj \
     latencyflex-vulkan-layer \
-    vkBasalt \
-    mangohud \
+    vkBasalt.x86_64 \
+    vkBasalt.i686 \
+    mangohud.x86_64 \
+    mangohud.i686 \
     sdgyrodsu \
     sddm-sugar-steamOS \
     ibus-pinyin \
@@ -403,13 +427,15 @@ RUN rpm-ostree install \
     mv -vf /tmp/linux-firmware-neptune/* /usr/lib/firmware/cirrus/ && \
     rm -rf /tmp/linux-firmware-neptune && \
     wget $(jq -r '.assets[].browser_download_url | select(endswith("steam-patch"))' <<< $(curl -s 'https://api.github.com/repos/KyleGospo/steam-patch/releases' | jq -r "first(.[] | select(.prerelease == "false"))")) -O /usr/bin/steam-patch && \
-    chmod +x /usr/bin/steam-patch
+    chmod +x /usr/bin/steam-patch && \
+    if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
+        rpm-ostree install \
+           mesa-va-drivers \ 
+    ; fi
 
 # Install Steam and Lutris into their own OCI layer
 # Add bootstraplinux_ubuntu12_32.tar.xz used by gamescope-session (Thanks ChimeraOS! - https://chimeraos.org/)
 RUN rpm-ostree install \
-        mesa-dri-drivers.i686 \
-        mesa-vulkan-drivers.i686 \
         vulkan-loader.i686 \
         alsa-lib.i686 \
         fontconfig.i686 \
@@ -422,8 +448,6 @@ RUN rpm-ostree install \
         libXinerama.i686 \
         libXtst.i686 \
         libXScrnSaver.i686 \
-        mesa-libGL.i686 \
-        mesa-libEGL.i686 \
         NetworkManager-libnm.i686 \
         nss.i686 \
         pulseaudio-libs.i686 \
@@ -434,6 +458,13 @@ RUN rpm-ostree install \
         libdbusmenu-gtk3.i686 \
         libatomic.i686 \
         pipewire-alsa.i686 && \
+    if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
+        rpm-ostree install \
+            mesa-dri-drivers.i686 \
+            mesa-vulkan-drivers.i686 \
+            mesa-libGL.i686 \
+            mesa-libEGL.i686 \
+    ; fi && \
     sed -i '0,/enabled=0/s//enabled=1/' /etc/yum.repos.d/rpmfusion-nonfree-steam.repo && \
     sed -i '0,/enabled=1/s//enabled=0/' /etc/yum.repos.d/rpmfusion-nonfree.repo && \
     sed -i '0,/enabled=1/s//enabled=0/' /etc/yum.repos.d/rpmfusion-nonfree-updates.repo && \
