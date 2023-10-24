@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Script Version
-VER=4
+VER=6
 VER_FILE="/etc/bazzite/flatpak_manager_version"
 VER_RAN=$(cat $VER_FILE)
 
@@ -23,8 +23,8 @@ flatpak remote-modify --system --enable flathub
 
 # Lists of flatpaks
 FLATPAK_LIST=$(flatpak list --columns=application)
-INSTALL_LIST=$(cat /etc/flatpak/install)
-REMOVE_LIST=$(cat /etc/flatpak/remove)
+INSTALL_LIST=$(cat /usr/share/ublue-os/bazzite/flatpak/install)
+REMOVE_LIST=$(cat /usr/share/ublue-os/bazzite/flatpak/remove)
 
 # Install flatpaks in list
 if [[ -n $INSTALL_LIST ]]; then
@@ -38,8 +38,6 @@ fi
 if [[ -n $REMOVE_LIST ]]; then
   flatpak remove --system --noninteractive ${REMOVE_LIST[@]}
 fi
-
-notify-send "Bazzite Portal" "Finished installing system flatpaks" --app-name="Bazzite Portal" -u NORMAL -i /usr/share/ublue-os/bazzite/logo.svg
 
 mkdir -p /etc/bazzite
 echo $VER > $VER_FILE

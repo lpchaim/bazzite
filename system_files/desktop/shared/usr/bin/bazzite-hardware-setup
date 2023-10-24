@@ -7,7 +7,7 @@ BASE_IMAGE_NAME=$(jq -r '."base-image-name"' < $IMAGE_INFO)
 FEDORA_VERSION=$(jq -r '."fedora-version"' < $IMAGE_INFO)
 
 # SCRIPT VERSION
-HWS_VER=9
+HWS_VER=12
 HWS_VER_FILE="/etc/bazzite/hws_version"
 HWS_VER_RAN=$(cat $HWS_VER_FILE)
 
@@ -18,119 +18,6 @@ KNOWN_IMAGE_FLAVOR_FILE="/etc/bazzite/image_flavor"
 KNOWN_IMAGE_FLAVOR=$(cat $KNOWN_IMAGE_FLAVOR_FILE)
 KNOWN_FEDORA_VERSION_FILE="/etc/bazzite/fedora_version"
 KNOWN_FEDORA_VERSION=$(cat $KNOWN_FEDORA_VERSION_FILE)
-
-# GLOBAL
-SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name)"
-GPU_ID=$(lspci -k | grep -A 3 -E "(VGA|3D)")
-KARGS=$(rpm-ostree kargs)
-INITRAMFS=$(rpm-ostree initramfs)
-NEEDED_KARGS=""
-echo "Current kargs: $KARGS"
-mkdir -p /etc/bazzite
-
-# KERNEL ARGUMENTS
-if [[ ":Jupiter:" =~ ":$SYS_ID:" ]]; then
-  echo "Checking for needed karg changes (Jupiter)"
-
-  if [[ ! $KARGS =~ "amd_pstate" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=amd_pstate=active"
-  fi
-
-  if [[ ! $KARGS =~ "amd_iommu" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=amd_iommu=off"
-  fi
-
-  if [[ ! $KARGS =~ "amdgpu.gttsize" ]]; then
-    if [[ "$(awk '/MemTotal/{print $(NF-1)}' /proc/meminfo)" == "31664740" ]]; then
-      echo "32GB RAM Steam Deck detected"
-      NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=amdgpu.gttsize=16256"
-      sed -i 's/zram-size=1024/zram-size=2048/g' /etc/systemd/zram-generator.conf
-
-    else
-      NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=amdgpu.gttsize=8128"
-    fi
-  fi
-
-  if [[ ! $KARGS =~ "spi_amd.speed_dev" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=spi_amd.speed_dev=1"
-  fi
-
-  if [[ ! $KARGS =~ "initcall_blacklist" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=initcall_blacklist=simpledrm_platform_driver_init"
-  fi
-  
-  if [[ ! $KARGS =~ "modprobe.blacklist=sp5100_tco" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=modprobe.blacklist=sp5100_tco"
-  fi
-fi
-
-if grep -qz "Kernel driver in use: radeon" <<< $GPU_ID; then
-  echo "Legacy AMD hardware detected, enabling CIK and SI support in AMDGPU"
-  if [[ ! $KARGS =~ "radeon.si_support" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=radeon.si_support=0"
-  fi
-
-  if [[ ! $KARGS =~ "radeon.cik_support" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=radeon.cik_support=0"
-  fi
-
-  if [[ ! $KARGS =~ "amdgpu.si_support" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=amdgpu.si_support=1"
-  fi
-
-  if [[ ! $KARGS =~ "amdgpu.cik_support" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=amdgpu.cik_support=1"
-  fi
-fi
-
-if [[ $IMAGE_FLAVOR =~ "nvidia" ]]; then
-  echo "Checking for needed karg changes (Nvidia)"
-
-  if [[ ! $KARGS =~ "rd.driver.blacklist=nouveau" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=rd.driver.blacklist=nouveau"
-  fi
-
-  if [[ ! $KARGS =~ "modprobe.blacklist=nouveau" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=modprobe.blacklist=nouveau"
-  fi
-
-  if [[ ! $KARGS =~ "nvidia-drm.modeset" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --append-if-missing=nvidia-drm.modeset=1"
-  fi
-else
-  echo "Checking for needed karg changes"
-
-  if [[ $KARGS =~ "rd.driver.blacklist=nouveau" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --delete-if-present=rd.driver.blacklist=nouveau"
-  fi
-
-  if [[ $KARGS =~ "modprobe.blacklist=nouveau" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --delete-if-present=modprobe.blacklist=nouveau"
-  fi
-
-  if [[ $KARGS =~ "nvidia-drm.modeset" ]]; then
-    NEEDED_KARGS="$NEEDED_KARGS --delete-if-present=nvidia-drm.modeset=1"
-  fi
-fi
-
-if [[ $KARGS =~ "nomodeset" ]]; then
-  echo "Removing nomodeset"
-  NEEDED_KARGS="$NEEDED_KARGS --delete-if-present=nomodeset"
-fi
-
-if [[ $INITRAMFS =~ "disabled" ]]; then
-  echo "Found needed initramfs changes, applying."
-  plymouth display-message --text="Updating initramfs - Please wait, this may take a while" || true
-  rpm-ostree initramfs --enable --arg=-I --arg=/etc/crypttab
-fi
-
-if [[ -n "$NEEDED_KARGS" ]]; then
-  echo "Found needed karg changes, applying the following: $NEEDED_KARGS"
-  plymouth display-message --text="Updating kargs - Please wait, this may take a while" || true
-  rpm-ostree kargs ${NEEDED_KARGS} --reboot || exit 1
-else
-  echo "No karg changes needed"
-fi
 
 # RUN REMAINDER OF SCRIPT ONLY IF UPDATED
 if [[ -f $HWS_VER_FILE && $HWS_VER = $HWS_VER_RAN ]]; then
@@ -143,6 +30,83 @@ if [[ -f $HWS_VER_FILE && $HWS_VER = $HWS_VER_RAN ]]; then
       fi
     fi
   fi
+fi
+
+# GLOBAL
+SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name)"
+GPU_ID=$(lspci -k | grep -A 3 -E "(VGA|3D)")
+KARGS=$(rpm-ostree kargs)
+NEEDED_KARGS=()
+INITRAMFS=$(rpm-ostree initramfs)
+NEEDED_INITRAMFS=("/etc/crypttab")
+NEEDS_INITRAMFS_APPLICATION=false
+
+# INITRAMFS
+echo "Current initramfs: $INITRAMFS"
+
+if [[ $IMAGE_FLAVOR =~ "nvidia" ]]; then
+  NEEDED_INITRAMFS+=("/etc/modprobe.d/nvidia.conf")
+else
+  NEEDED_INITRAMFS+=("/etc/modprobe.d/amdgpu.conf")
+fi
+
+if [[ $IMAGE_NAME =~ "deck" || $IMAGE_NAME =~ "ally" || $IMAGE_NAME =~ "framegame" ]]; then
+  NEEDED_INITRAMFS+=("/etc/modprobe.d/deck-blacklist.conf")
+fi
+
+for INITRAMFS_ARG in ${NEEDED_INITRAMFS[@]}; do
+  if [[ ! $INITRAMFS =~ "$INITRAMFS_ARG" ]]; then
+    NEEDS_INITRAMFS_APPLICATION=true
+  fi
+done
+
+if $NEEDS_INITRAMFS_APPLICATION; then
+  echo "Found needed initramfs changes, applying the following: ${NEEDED_INITRAMFS[*]}"
+  plymouth display-message --text="Updating initramfs - Please wait, this may take a while" || true
+  rpm-ostree initramfs --enable --arg="-I ${NEEDED_INITRAMFS[*]}"
+else
+  echo "No initramfs changes needed"
+fi
+
+# KERNEL ARGUMENTS
+echo "Current kargs: $KARGS"
+
+if [[ ":Jupiter:" =~ ":$SYS_ID:" ]]; then
+  echo "Checking for needed karg changes (Jupiter)"
+
+  if [[ ! $KARGS =~ "amd_pstate" ]]; then
+    NEEDED_KARGS+=("--append-if-missing=amd_pstate=active")
+  fi
+
+  if [[ ! $KARGS =~ "amd_iommu" ]]; then
+    NEEDED_KARGS+=("--append-if-missing=amd_iommu=off")
+  fi
+
+  if [[ ! $KARGS =~ "amdgpu.gttsize" ]]; then
+    if [[ "$(awk '/MemTotal/{print $(NF-1)}' /proc/meminfo)" == "31664740" ]]; then
+      echo "32GB RAM Steam Deck detected"
+      NEEDED_KARGS+=("--append-if-missing=amdgpu.gttsize=16256")
+    else
+      NEEDED_KARGS+=("--append-if-missing=amdgpu.gttsize=8128")
+    fi
+  fi
+  
+  if [[ ! $KARGS =~ "initcall_blacklist" ]]; then
+    NEEDED_KARGS+=("--append-if-missing=initcall_blacklist=simpledrm_platform_driver_init")
+  fi
+fi
+
+if [[ $KARGS =~ "nomodeset" ]]; then
+  echo "Removing nomodeset"
+  NEEDED_KARGS+=("--delete-if-present=nomodeset")
+fi
+
+if [[ -n "$NEEDED_KARGS" ]]; then
+  echo "Found needed karg changes, applying the following: ${NEEDED_KARGS[*]}"
+  plymouth display-message --text="Updating kargs - Please wait, this may take a while" || true
+  rpm-ostree kargs ${NEEDED_KARGS[*]} --reboot || exit 1
+else
+  echo "No karg changes needed"
 fi
 
 if [[ $IMAGE_NAME =~ "deck" || $IMAGE_NAME =~ "ally" || $IMAGE_NAME =~ "framegame" ]]; then
@@ -187,6 +151,7 @@ if (( $(hostname | wc -m) > 16 )); then
   hostnamectl set-hostname bazzite
 fi
 
+mkdir -p /etc/bazzite
 echo $HWS_VER > $HWS_VER_FILE
 echo $IMAGE_NAME > $KNOWN_IMAGE_NAME_FILE
 echo $IMAGE_FLAVOR > $KNOWN_IMAGE_FLAVOR_FILE

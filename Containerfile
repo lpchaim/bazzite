@@ -8,7 +8,7 @@ ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-38}"
 FROM ${BASE_IMAGE}:${FEDORA_MAJOR_VERSION} AS bazzite
 
 ARG IMAGE_NAME="${IMAGE_NAME}"
-ARG IMAGE_VENDOR="lpchaim"
+ARG IMAGE_VENDOR="${IMAGE_VENDOR}"
 ARG IMAGE_FLAVOR="${IMAGE_FLAVOR}"
 ARG AKMODS_FLAVOR="${AKMODS_FLAVOR}"
 ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME}"
@@ -169,7 +169,8 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         gnome-shell-extension-blur-my-shell \
         gnome-shell-extension-hanabi \
         gnome-shell-extension-gamerzilla \
-        rom-properties-gtk3 && \
+        rom-properties-gtk3 \
+        openssh-askpass && \
     rpm-ostree override remove \
         gnome-classic-session \
         gnome-tour \
@@ -201,13 +202,15 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         rocm-clinfo \
         waydroid \
         weston && \
-    sed -i~ -E 's/=.\$\(command -v (nft|ip6?tables-legacy).*/=/g' /usr/lib/waydroid/data/scripts/waydroid-net.sh \
+    sed -i~ -E 's/=.\$\(command -v (nft|ip6?tables-legacy).*/=/g' /usr/lib/waydroid/data/scripts/waydroid-net.sh && \
+    rm -f /usr/etc/modprobe.d/nvidia.conf \
 ; else \
+    rm -f /usr/etc/modprobe.d/amdgpu.conf && \
     if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
         rpm-ostree install \
             mesa-libGL.i686 \
             mesa-libEGL.i686 \
-    ;fi && \
+    ; fi && \
     rpm-ostree install \
         vulkan-loader.i686 \
         alsa-lib.i686 \
@@ -316,7 +319,7 @@ RUN /tmp/image-info.sh && \
     ; fi && \
     if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         systemctl disable waydroid-container.service && \
-        sed -i 's@Exec=waydroid@Exec=/usr/bin/waydroid-launcher@g' /usr/share/applications/Waydroid.desktop && \
+        sed -i 's@Exec=waydroid first-launch@Exec=/usr/bin/waydroid-launcher first-launch\nX-Steam-Library-Capsule=/usr/share/applications/Waydroid/capsule.png\nX-Steam-Library-Hero=/usr/share/applications/Waydroid/hero.png\nX-Steam-Library-Logo=/usr/share/applications/Waydroid/logo.png\nX-Steam-Library-StoreCapsule=/usr/share/applications/Waydroid/store-logo.png\nX-Steam-Controller-Template=Desktop@g' /usr/share/applications/Waydroid.desktop && \
         rm /usr/share/wayland-sessions/weston.desktop \
     ; fi && \
     mkdir -p /usr/etc/default && \
@@ -330,7 +333,7 @@ RUN /tmp/image-info.sh && \
 FROM bazzite as bazzite-deck
 
 ARG IMAGE_NAME="${IMAGE_NAME}"
-ARG IMAGE_VENDOR="lpchaim"
+ARG IMAGE_VENDOR="${IMAGE_VENDOR}"
 ARG IMAGE_FLAVOR="${IMAGE_FLAVOR}"
 ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME}"
 ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION}"
@@ -380,8 +383,8 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         steamdeck-kde-presets \
 ; else \
     rpm-ostree install \
+        steamdeck-gnome-presets \
         gnome-shell-extension-bazzite-menu \
-        gnome-shell-extension-search-light \
         sddm && \
     wget https://raw.githubusercontent.com/doitsujin/dxvk/master/dxvk.conf -O /usr/etc/dxvk-example.conf \
 ; fi
@@ -527,7 +530,6 @@ RUN /tmp/image-info.sh && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-wallpaper-engine-kde-plugin.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_ycollet-audinux.repo && \
     if grep -q "silverblue" <<< "${BASE_IMAGE_NAME}"; then \
-        systemctl mask power-profiles-daemon.service && \
         systemctl disable gdm.service && \
         systemctl enable sddm.service \
     ; fi && \

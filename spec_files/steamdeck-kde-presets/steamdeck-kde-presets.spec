@@ -8,10 +8,13 @@ URL:            https://github.com/ublue-os/bazzite
 Source:         https://gitlab.com/evlaV/%{name}/-/archive/master/%{name}-master.tar.gz
 BuildArch:      noarch
 Patch0:         fedora.patch
+Patch1:         nested-desktop-resolution.patch
 
 Requires:       kde-filesystem
 
-Conflicts:      steamdeck-kde-themes
+Conflicts:      steamdeck-kde-presets-desktop
+Conflicts:      steamdeck-backgrounds
+Conflicts:      steameck-gnome-presets
 
 %description
 KDE Presets from Valve's SteamOS 3.0
@@ -38,8 +41,6 @@ mv %{buildroot}%{_datadir}/icons/hicolor/scalable/places/distributor-logo-steamd
 # Remove unneeded files
 rm %{buildroot}%{_datadir}/icons/hicolor/scalable/places/distributor-logo.svg
 rm %{buildroot}%{_sysconfdir}/xdg/autostart/steam.desktop
-rm %{buildroot}%{_bindir}/steamos-nested-desktop
-rm -rf %{buildroot}%{_datadir}/applications/steam/steamos-nested-desktop
 rm %{buildroot}%{_datadir}/applications/org.mozilla.firefox.desktop
 rm %{buildroot}%{_sysconfdir}/profile.d/kde.sh
 rm %{buildroot}%{_sysconfdir}/xdg/kcm-about-distrorc
@@ -77,7 +78,9 @@ rm %{buildroot}%{_sysconfdir}/X11/Xsession.d/50rotate-screen
 %{_sysconfdir}/xdg/powermanagementprofilesrc
 %{_bindir}/jupiter-plasma-bootstrap
 %{_bindir}/steamos-add-to-steam
+%{_bindir}/steamos-nested-desktop
 %{_prefix}/lib/udev/rules.d/99-kwin-ignore-tablet-mode.rules
+%{_datadir}/applications/steam/steamos-nested-desktop
 %{_datadir}/X11/xorg.conf.d/99-pointer.conf
 %{_datadir}/icons/*
 %{_datadir}/konsole/*

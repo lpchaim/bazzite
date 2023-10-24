@@ -7,7 +7,7 @@ FEDORA_VERSION=$(jq -r '."fedora-version"' < $IMAGE_INFO)
 SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name)"
 
 # SCRIPT VERSION
-USER_SETUP_VER=9
+USER_SETUP_VER=10
 USER_SETUP_VER_FILE="$HOME/.bazzite-configured"
 USER_SETUP_VER_RAN=$(cat $USER_SETUP_VER_FILE)
 USER_SETUP_FEDORA_VER_FILE="$HOME/.bazzite-configured-fedora-version"
@@ -20,6 +20,16 @@ if [[ -f $USER_SETUP_VER_FILE && $USER_SETUP_VER = $USER_SETUP_VER_RAN ]]; then
     exit 0
   fi
 fi
+
+# Enable Flathub
+if grep -qz 'fedora' <<< $(flatpak remotes); then
+  flatpak remote-delete --user fedora --force
+fi
+flatpak remote-add --if-not-exists --user flathub /etc/flatpak/remotes.d/flathub.flatpakrepo
+flatpak remote-modify --user --enable flathub
+
+# Handle privileged tasks
+pkexec /usr/bin/bazzite-privileged-user-setup
 
 if [[ $BASE_IMAGE_NAME =~ "kinoite"  ]]; then
   echo 'Running setup for Kinoite'
@@ -82,9 +92,6 @@ else
     gsettings set org.gnome.desktop.interface toolkit-accessibility false
     gnome-extensions enable block-caribou-36@lxylxy123456.ercli.dev
 
-    echo 'Configuring search replacement with Steam Deck Keyboard support'
-    gnome-extensions enable search-light@icedman.github.com
-
     echo 'Enabling Appindicator Support'
     gnome-extenisons enable appindicatorsupport@rgcjonas.gmail.com
 
@@ -127,12 +134,6 @@ if [[ $IMAGE_NAME =~ "deck" || $IMAGE_NAME =~ "ally" || $IMAGE_NAME =~ "framegam
     pkexec /usr/bin/bazzite-enable-steam-patch "$USER"
   fi
 fi
-
-# Enable NTP
-timedatectl set-ntp true
-
-# Setup Flathub
-pkexec /usr/bin/bazzite-flathub-setup
 
 # Prevent future executions
 echo "Writing state file"
