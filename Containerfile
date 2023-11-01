@@ -103,10 +103,10 @@ RUN rpm-ostree install \
         twitter-twemoji-fonts \
         lato-fonts \
         fira-code-fonts && \
-    rpm-ostree install $(curl https://api.github.com/repos/charmbracelet/vhs/releases/latest | jq -r '.assets[] | select(.name| test(".*.x86_64.rpm$")).browser_download_url') && \
     rpm-ostree install $(curl https://api.github.com/repos/charmbracelet/gum/releases/latest | jq -r '.assets[] | select(.name| test(".*.x86_64.rpm$")).browser_download_url') && \
-    wget https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.x86_64 -O /usr/bin/ttyd && \
-    chmod +x /usr/bin/ttyd && \
+    wget https://raw.githubusercontent.com/scaronni/steam-proton-mf-wmv/master/installcab.py -O /usr/bin/installcab && \
+    wget https://github.com/scaronni/steam-proton-mf-wmv/blob/master/install-mf-wmv.sh -O /usr/bin/install-mf-wmv && \
+    sed -i 's@python3 installcab.py@/usr/bin/installcab@g' /usr/bin/install-mf-wmv && \
     wget https://raw.githubusercontent.com/jlu5/icoextract/master/exe-thumbnailer.thumbnailer -O /usr/share/thumbnailers/exe-thumbnailer.thumbnailer && \
     wget https://gitlab.com/popsulfr/steamos-btrfs/-/raw/main/files/usr/lib/systemd/system/btrfs-dedup@.service -O /usr/lib/systemd/system/btrfs-dedup@.service && \
     wget https://gitlab.com/popsulfr/steamos-btrfs/-/raw/main/files/usr/lib/systemd/system/btrfs-dedup@.timer -O /usr/lib/systemd/system/btrfs-dedup@.timer
@@ -120,6 +120,7 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         steamdeck-kde-presets-desktop \
         wallpaper-engine-kde-plugin \
         kdeconnectd \
+        kdeplasma-addons \
         extest.i686 \
         rom-properties-kf5 && \
     if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
@@ -169,7 +170,6 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         gnome-shell-extension-gsconnect \
         nautilus-gsconnect \
         gnome-shell-extension-system76-scheduler \
-        gnome-shell-extension-caribou-blocker \
         gnome-shell-extension-compiz-windows-effect \
         gnome-shell-extension-just-perfection \
         gnome-shell-extension-blur-my-shell \
@@ -255,7 +255,10 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         lutris \
         wxGTK \
         libFAudio \
-        wine-core \
+        wine-core.x86_64 \
+        wine-core.i686 \
+        wine-pulseaudio.x86_64 \
+        wine-pulseaudio.i686 \
         winetricks \
         protontricks \
         latencyflex-vulkan-layer \
@@ -265,6 +268,17 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         mangohud.i686 \
         obs-vkcapture.x86_64 \
         obs-vkcapture.i686 \
+        gperftools-libs.i686 && \
+    wget $(curl https://api.github.com/repos/ishitatsuyuki/LatencyFleX/releases/latest | jq -r '.assets[] | select(.name| test(".*.tar.xz$")).browser_download_url') -O /tmp/latencyflex.tar.xz && \
+    mkdir -p /tmp/latencyflex && \
+    tar --strip-components 1 -xvf /tmp/latencyflex.tar.xz -C /tmp/latencyflex && \
+    rm -f /tmp/latencyflex.tar.xz && \
+    cp -r /tmp/latencyflex/wine/usr/lib/wine/* /usr/lib64/wine/ && \
+    rm -rf /tmp/latencyflex && \
+    wget https://raw.githubusercontent.com/Shringe/LatencyFleX-Installer/main/install.sh -O /usr/bin/latencyflex && \
+    sed -i 's@/usr/lib/wine/@/usr/lib64/wine/@g' /usr/bin/latencyflex && \
+    sed -i 's@"dxvk.conf"@"/usr/share/latencyflex/dxvk.conf"@g' /usr/bin/latencyflex && \
+    chmod +x /usr/bin/latencyflex \
 ; fi
 
 # Cleanup & Finalize
@@ -391,6 +405,7 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
     rpm-ostree install \
         steamdeck-gnome-presets \
         gnome-shell-extension-bazzite-menu \
+        gnome-shell-extension-caribou-blocker \
         sddm && \
     wget https://raw.githubusercontent.com/doitsujin/dxvk/master/dxvk.conf -O /usr/etc/dxvk-example.conf \
 ; fi
@@ -421,6 +436,9 @@ RUN rpm-ostree install \
     ibus-table-chinese-quick \
     socat \
     zstd \
+    zenity \
+    newt \
+    qt5-qtvirtualkeyboard \
     python-vdf \
     python-crcmod && \
     git clone https://gitlab.com/evlaV/jupiter-dock-updater-bin.git \
@@ -495,10 +513,25 @@ RUN rpm-ostree install \
         libFAudio \
         gamescope.x86_64 \
         gamescope.i686 \
-        gamescope-session \
-        wine-core \
+        gamescope-session-plus \
+        gamescope-session-steam \
+        wine-core.x86_64 \
+        wine-core.i686 \
+        wine-pulseaudio.x86_64 \
+        wine-pulseaudio.i686 \
         winetricks \
-        protontricks && \
+        protontricks \
+        gperftools-libs.i686 && \
+    wget $(curl https://api.github.com/repos/ishitatsuyuki/LatencyFleX/releases/latest | jq -r '.assets[] | select(.name| test(".*.tar.xz$")).browser_download_url') -O /tmp/latencyflex.tar.xz && \
+    mkdir -p /tmp/latencyflex && \
+    tar --strip-components 1 -xvf /tmp/latencyflex.tar.xz -C /tmp/latencyflex && \
+    rm -f /tmp/latencyflex.tar.xz && \
+    cp -r /tmp/latencyflex/wine/usr/lib/wine/* /usr/lib64/wine/ && \
+    rm -rf /tmp/latencyflex && \
+    wget https://raw.githubusercontent.com/Shringe/LatencyFleX-Installer/main/install.sh -O /usr/bin/latencyflex && \
+    sed -i 's@/usr/lib/wine/@/usr/lib64/wine/@g' /usr/bin/latencyflex && \
+    sed -i 's@"dxvk.conf"@"/usr/share/latencyflex/dxvk.conf"@g' /usr/bin/latencyflex && \
+    chmod +x /usr/bin/latencyflex && \
     if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         rpm-ostree override remove \
             gamemode \
