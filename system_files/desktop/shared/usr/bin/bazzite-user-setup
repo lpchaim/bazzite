@@ -29,7 +29,7 @@ flatpak remote-add --if-not-exists --user flathub /etc/flatpak/remotes.d/flathub
 flatpak remote-modify --user --enable flathub
 
 # Handle privileged tasks
-pkexec /usr/bin/bazzite-privileged-user-setup
+pkexec /usr/libexec/bazzite-privileged-user-setup
 
 if [[ $BASE_IMAGE_NAME =~ "kinoite"  ]]; then
   echo 'Running setup for Kinoite'
@@ -124,14 +124,6 @@ else
     touch $HOME/.steam/.trackerignore
     mkdir -p $HOME/.local/share/Steam
     touch $HOME/.local/share/Steam/.trackerignore
-  fi
-fi
-
-# Steam Patch setup
-if [[ $IMAGE_NAME =~ "deck" || $IMAGE_NAME =~ "ally" || $IMAGE_NAME =~ "framegame" ]]; then
-  if [[ ! ":Jupiter:" =~ ":$SYS_ID:" ]]; then
-    echo 'Enabling Steam-Patch'
-    pkexec /usr/bin/bazzite-enable-steam-patch "$USER"
   fi
 fi
 

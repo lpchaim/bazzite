@@ -1,0 +1,46 @@
+#!/bin/bash
+set -e
+
+if [[ $# -eq 1 ]]; then
+  case "$1" in
+    "-c")
+      if [[ -f /var/ublue-update/branch ]]; then
+        branch=$(cat /var/ublue-update/branch)
+      else
+        branch=$(cut -d ":" -f4 <<< "$(rpm-ostree status | grep -m 1 'bazzite')")
+      fi
+
+      case "$branch" in
+        "latest" | "testing" | "unstable")
+          echo "$branch"
+          exit 0
+          ;;
+        *)
+          # This can happen on CI builds or when downgrading from a newer build that knows of more branches.  The update
+          # path should decide how to handle it.
+          echo >&2 "Warning: Unrecognized currently selected branch name '$branch', updates may not succeed."
+          echo "$branch"
+          exit 0
+          ;;
+      esac
+      ;;
+    "-l")
+      echo latest
+      echo testing
+      echo unstable
+      exit 0
+      ;;
+    "latest" | "testing")
+      /usr/bin/pkexec /usr/libexec/ublue-update-rebase "$1"
+      exit 0
+      ;;
+    "unstable")
+      echo "The unstable branch has a high risk of breaking."
+      echo "Do NOT use it unless you know what you are doing."
+      /usr/bin/pkexec /usr/libexec/ublue-update-rebase "$1"
+      exit 0
+      ;;
+  esac
+fi
+
+echo "Usage: steamos-select-branch <latest|testing|unstable>" 1>&2

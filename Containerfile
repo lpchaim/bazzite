@@ -28,9 +28,6 @@ RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo
             /tmp/akmods-rpms/kmods/*openrazer*.rpm \
             /tmp/akmods-rpms/kmods/*v4l2loopback*.rpm \
             /tmp/akmods-rpms/kmods/*wl*.rpm \
-    ; else \
-        rpm-ostree install \
-            /tmp/akmods-rpms/kmods/*evdi*.rpm \
     ; fi && \
     rpm-ostree install \
         /tmp/akmods-rpms/kmods/*gcadapter_oc*.rpm \
@@ -53,6 +50,7 @@ RUN wget https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/repo/fedora-$
     wget https://copr.fedorainfracloud.org/coprs/kylegospo/obs-vkcapture/repo/fedora-$(rpm -E %fedora)/kylegospo-obs-vkcapture-fedora-$(rpm -E %fedora).repo?arch=x86_64 -O /etc/yum.repos.d/_copr_kylegospo-obs-vkcapture.repo && \
     wget https://copr.fedorainfracloud.org/coprs/kylegospo/wallpaper-engine-kde-plugin/repo/fedora-$(rpm -E %fedora)/kylegospo-wallpaper-engine-kde-plugin-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-wallpaper-engine-kde-plugin.repo && \
     wget https://copr.fedorainfracloud.org/coprs/kylegospo/gnome-vrr/repo/fedora-$(rpm -E %fedora)/kylegospo-gnome-vrr-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-gnome-vrr.repo && \
+    wget https://copr.fedorainfracloud.org/coprs/kylegospo/vk_hdr_layer/repo/fedora-$(rpm -E %fedora)/kylegospo-vk_hdr_layer-fedora-$(rpm -E %fedora).repo?arch=x86_64 -O /etc/yum.repos.d/_copr_kylegospo-vk_hdr_layer.repo && \
     wget https://copr.fedorainfracloud.org/coprs/ycollet/audinux/repo/fedora-$(rpm -E %fedora)/ycollet-audinux-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_ycollet-audinux.repo && \
     wget https://copr.fedorainfracloud.org/coprs/kylegospo/rom-properties/repo/fedora-$(rpm -E %fedora)/kylegospo-rom-properties-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-rom-properties.repo && \
     wget https://pkgs.tailscale.com/stable/fedora/tailscale.repo -O /etc/yum.repos.d/tailscale.repo && \
@@ -60,10 +58,10 @@ RUN wget https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/repo/fedora-$
 
 # Remove unneeded packages
 RUN rpm-ostree override remove \
-    ublue-os-update-services \
-    firefox \
-    firefox-langpacks \
-    htop
+        ublue-os-update-services \
+        firefox \
+        firefox-langpacks \
+        htop
 
 # Install new packages
 RUN rpm-ostree install \
@@ -121,7 +119,6 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         wallpaper-engine-kde-plugin \
         kdeconnectd \
         kdeplasma-addons \
-        extest.i686 \
         rom-properties-kf5 && \
     if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
         rpm-ostree override replace \
@@ -240,6 +237,7 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         libdbusmenu-gtk3.i686 \
         libatomic.i686 \
         pipewire-alsa.i686 \
+        extest.i686 \
         clinfo && \
     sed -i '0,/enabled=0/s//enabled=1/' /etc/yum.repos.d/rpmfusion-nonfree-steam.repo && \
     sed -i '0,/enabled=1/s//enabled=0/' /etc/yum.repos.d/rpmfusion-nonfree.repo && \
@@ -266,9 +264,12 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         vkBasalt.i686 \
         mangohud.x86_64 \
         mangohud.i686 \
-        obs-vkcapture.x86_64 \
-        obs-vkcapture.i686 \
         gperftools-libs.i686 && \
+    if [[ "${IMAGE_FLAVOR}" != "surface-nvidia" ]]; then \
+        rpm-ostree install \
+            obs-vkcapture.x86_64 \
+            obs-vkcapture.i686 \
+    ; fi && \
     wget $(curl https://api.github.com/repos/ishitatsuyuki/LatencyFleX/releases/latest | jq -r '.assets[] | select(.name| test(".*.tar.xz$")).browser_download_url') -O /tmp/latencyflex.tar.xz && \
     mkdir -p /tmp/latencyflex && \
     tar --strip-components 1 -xvf /tmp/latencyflex.tar.xz -C /tmp/latencyflex && \
@@ -308,6 +309,7 @@ RUN /tmp/image-info.sh && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-obs-vkcapture.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-wallpaper-engine-kde-plugin.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-gnome-vrr.repo && \
+    sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-vk_hdr_layer.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_ycollet-audinux.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-rom-properties.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/tailscale.repo && \
@@ -316,9 +318,6 @@ RUN /tmp/image-info.sh && \
     mkdir -p /usr/etc/flatpak/remotes.d && \
     wget -q https://dl.flathub.org/repo/flathub.flatpakrepo -P /usr/etc/flatpak/remotes.d && \
     systemctl enable com.system76.Scheduler.service && \
-    if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
-        systemctl enable displaylink.service \
-    ; fi && \
     systemctl enable btrfs-dedup@var-home.timer && \
     systemctl enable input-remapper.service && \
     systemctl unmask bazzite-flatpak-manager.service && \
@@ -340,7 +339,9 @@ RUN /tmp/image-info.sh && \
     if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         systemctl disable waydroid-container.service && \
         sed -i 's@Exec=waydroid first-launch@Exec=/usr/bin/waydroid-launcher first-launch\nX-Steam-Library-Capsule=/usr/share/applications/Waydroid/capsule.png\nX-Steam-Library-Hero=/usr/share/applications/Waydroid/hero.png\nX-Steam-Library-Logo=/usr/share/applications/Waydroid/logo.png\nX-Steam-Library-StoreCapsule=/usr/share/applications/Waydroid/store-logo.png\nX-Steam-Controller-Template=Desktop@g' /usr/share/applications/Waydroid.desktop && \
-        rm /usr/share/wayland-sessions/weston.desktop \
+        rm /usr/share/wayland-sessions/weston.desktop && \
+        wget https://raw.githubusercontent.com/Quackdoc/waydroid-scripts/main/waydroid-choose-gpu.sh -O /usr/bin/waydroid-choose-gpu && \
+        chmod +x /usr/bin/waydroid-choose-gpu \
     ; fi && \
     mkdir -p /usr/etc/default && \
     rm -rf \
@@ -454,8 +455,6 @@ RUN rpm-ostree install \
     xz --check=crc32 /tmp/linux-firmware-neptune/cs35l41-dsp1-spk-{cali.bin,cali.wmfw,prot.bin,prot.wmfw} && \
     mv -vf /tmp/linux-firmware-neptune/* /usr/lib/firmware/cirrus/ && \
     rm -rf /tmp/linux-firmware-neptune && \
-    wget $(jq -r '.assets[].browser_download_url | select(endswith("steam-patch"))' <<< $(curl -s 'https://api.github.com/repos/KyleGospo/steam-patch/releases' | jq -r "first(.[] | select(.prerelease == "false"))")) -O /usr/bin/steam-patch && \
-    chmod +x /usr/bin/steam-patch && \
     if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
         rpm-ostree install \
            mesa-va-drivers \ 
