@@ -7,7 +7,7 @@ BASE_IMAGE_NAME=$(jq -r '."base-image-name"' < $IMAGE_INFO)
 FEDORA_VERSION=$(jq -r '."fedora-version"' < $IMAGE_INFO)
 
 # SCRIPT VERSION
-HWS_VER=12
+HWS_VER=14
 HWS_VER_FILE="/etc/bazzite/hws_version"
 HWS_VER_RAN=$(cat $HWS_VER_FILE)
 
@@ -35,6 +35,8 @@ fi
 # GLOBAL
 SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name)"
 GPU_ID=$(lspci -k | grep -A 3 -E "(VGA|3D)")
+MINIMUM_FREE_ZRAM=$(awk '/MemTotal/ {printf "%.0f", $2 * 0.01}' /proc/meminfo)
+CURRENT_FREE_ZRAM=$(sysctl vm.min_free_kbytes | awk '{print $3}')
 KARGS=$(rpm-ostree kargs)
 NEEDED_KARGS=()
 INITRAMFS=$(rpm-ostree initramfs)
@@ -74,10 +76,6 @@ echo "Current kargs: $KARGS"
 if [[ ":Jupiter:" =~ ":$SYS_ID:" ]]; then
   echo "Checking for needed karg changes (Jupiter)"
 
-  if [[ ! $KARGS =~ "amd_pstate" ]]; then
-    NEEDED_KARGS+=("--append-if-missing=amd_pstate=active")
-  fi
-
   if [[ ! $KARGS =~ "amd_iommu" ]]; then
     NEEDED_KARGS+=("--append-if-missing=amd_iommu=off")
   fi
@@ -91,8 +89,8 @@ if [[ ":Jupiter:" =~ ":$SYS_ID:" ]]; then
     fi
   fi
   
-  if [[ ! $KARGS =~ "initcall_blacklist" ]]; then
-    NEEDED_KARGS+=("--append-if-missing=initcall_blacklist=simpledrm_platform_driver_init")
+  if [[ $KARGS =~ "simpledrm_platform_driver_init" ]]; then
+    NEEDED_KARGS+=("--delete-if-present=initcall_blacklist=simpledrm_platform_driver_init")
   fi
 fi
 
@@ -115,7 +113,7 @@ if [[ $IMAGE_NAME =~ "deck" || $IMAGE_NAME =~ "ally" || $IMAGE_NAME =~ "framegam
     echo "Jupiter hardware detected, skipping further setup..."
   else
     echo "Generic device detected. Performing setup..."
-    if [[ ":ROG Ally RC71L_RC71L:AYANEO GEEK:AYANEO 2:AYANEO 2S:AOKZOE A1 AR07:G1619-04:" =~ ":$SYS_ID:" ]]; then
+    if [[ ":ROG Ally RC71L_RC71L:AYANEO GEEK:AYANEO 2:AYANEO 2S:AOKZOE A1 AR07:G1618-04:G1619-04:83E1:" =~ ":$SYS_ID:" ]]; then
       echo "HandyGCCS supported handheld detected, enabling handycon & TDP control..."
       systemctl enable --now handycon.service
       sed -i 's/ENABLE_HARDWARE_CONTROL_ON_NON_DECK_HARDWARE=0/ENABLE_HARDWARE_CONTROL_ON_NON_DECK_HARDWARE=1/g' /etc/default/steam-hardware-control
@@ -141,6 +139,16 @@ if [[ $(grep "compress=zstd" /etc/fstab) ]]; then
   fi
 else
   echo "No fstab param adjustments needed"
+fi
+
+# ZRAM MINIMUM-FREE CONFIGURATION
+echo "Current minimum-free ZRAM value: $CURRENT_FREE_ZRAM"
+
+if ((MINIMUM_FREE_ZRAM > CURRENT_FREE_ZRAM)); then
+    sysctl -w "vm.min_free_kbytes=${MINIMUM_FREE_ZRAM}"
+    echo "Found needed minimum-free ZRAM changes, applying the following: ${MINIMUM_FREE_ZRAM}"
+else
+  echo "No minimum-free ZRAM changes needed"
 fi
 
 # HOSTNAME FIX
