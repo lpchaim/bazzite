@@ -55,6 +55,17 @@ get-steamcmd:
   tar -xvzf /tmp/steamcmd.tar.gz -C ~/.steam
   rm /tmp/steamcmd.tar.gz
 
+# Install OpenRazer for Razer gaming hardware
+install-openrazer:
+  sudo wget https://download.opensuse.org/repositories/hardware:/razer/Fedora_$(rpm -E %fedora)/hardware:razer.repo -O /etc/yum.repos.d/hardware:razer.repo && \
+  ublue-update --wait && \
+  rpm-ostree install openrazer-meta razergenie && \
+  if ! grep -q "plugdev" /etc/group; then \
+    sudo bash -c 'grep "plugdev" /lib/group >> /etc/group' \
+  ; fi && \
+  sudo usermod -a -G plugdev $USER && \
+  echo "Please reboot to apply needed changes."
+
 # Install Nix with the Determinate Nix Installer
 install-nix:
   #!/usr/bin/env bash
@@ -176,15 +187,8 @@ get-boilr:
 
 # Patch a bug in some 32-bit Source 1.x titles that causes them to crash at startup
 patch-source1-tcmalloc:
-  #!/usr/bin/env bash
-  IMAGE_INFO="/usr/share/ublue-os/image-info.json"
-  IMAGE_FLAVOR=$(jq -r '."image-flavor"' < $IMAGE_INFO)
   echo 'Add the following as a launch option in Steam:'
-  if [[ ${IMAGE_FLAVOR} ~= 'nvidia' || ${IMAGE_FLAVOR} =~ "deck" || ${IMAGE_FLAVOR} =~ "ally" || ${IMAGE_FLAVOR} =~ "framegame" ]]; then
-    echo 'LD_PRELOAD=/usr/lib/libtcmalloc_and_profiler.so.4 %command%'
-  else
-    echo 'LD_PRELOAD=/usr/lib32/libtcmalloc.so %command%'
-  fi
+  echo 'LD_PRELOAD=/usr/lib/libtcmalloc_and_profiler.so.4 %command%'
   echo "Delete libtcmalloc_minimal.so.x in the game's bin folder if present."
 
 # Patch GMod's 64-bit beta to work properly on Linux (https://github.com/solsticegamestudios/GModCEFCodecFix)
@@ -265,8 +269,8 @@ deckswap-on:
   #!/usr/bin/env bash
   STATUS=$(systemctl status deckswap.service)
   if grep -q 'inactive' <<< ${STATUS}; then
-    systemctl enable deckswap.service
-    echo 'deckswap enabled. Please reboot.'
+    systemctl enable --now deckswap.service
+    echo 'deckswap enabled.'
   else
     echo 'deckswap is already enabled.'
   fi
@@ -276,8 +280,8 @@ deckswap-off:
   #!/usr/bin/env bash
   STATUS=$(systemctl status deckswap.service)
   if grep -qv 'inactive' <<< ${STATUS}; then
-    systemctl disable deckswap.service
-    echo 'deckswap disabled. Please reboot.'
+    systemctl disable --now deckswap.service
+    echo 'deckswap disabled.'
   else
     echo 'deckswap is already disabled.'
   fi
@@ -294,12 +298,13 @@ resize-deckswap:
       NEW_SIZE=1
     fi
     if ((${NEW_SIZE} >= 1 && ${NEW_SIZE} <= 16)); then
-      sudo sed -i 's/SWAP_SIZE='${CURRENT_SIZE}'G/SWAP_SIZE='${NEW_SIZE}'G/g' ${CONFIG}
-      echo 'Current size: '${NEW_SIZE}'G. Please reboot.'
+      sudo sed -i 's/SWAP_SIZE=.*/SWAP_SIZE='${NEW_SIZE}'G/g' ${CONFIG}
+      echo 'Current size: '${NEW_SIZE}'G.'
     else
       echo 'Error: Input out of range (1-16). Running again.'
       ujust resize-deckswap
     fi
+    systemctl restart deckswap.service
   else
     echo 'Error: Input is not an integer. Running again.'
     ujust resize-deckswap
@@ -350,11 +355,13 @@ resize-zram:
     fi
     if ((${NEW_SIZE} >= 512 && ${NEW_SIZE} <= 4096)); then
       if grep -q "zram-size" <<< $(cat ${CONFIG}); then
-        sudo sed -i 's/zram-size='${CURRENT_SIZE}'/zram-size='${NEW_SIZE}'/g' ${CONFIG}
+        sudo sed -i 's/zram-size=.*/zram-size='${NEW_SIZE}'/g' ${CONFIG}
       else
         sudo echo "zram-size=${NEW_SIZE}" >> ${CONFIG}
       fi
-      echo 'Current size: '${NEW_SIZE}'. Please reboot.'
+      systemctl daemon-reload
+      systemctl start /dev/zram0
+      zramctl
     else
       echo 'Error: Input out of range (512-4096). Running again.'
       ujust resize-zram

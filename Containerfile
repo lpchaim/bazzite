@@ -3,7 +3,7 @@ ARG IMAGE_FLAVOR="${IMAGE_FLAVOR:-main}"
 ARG AKMODS_FLAVOR="${AKMODS_FLAVOR:-main}"
 ARG SOURCE_IMAGE="${SOURCE_IMAGE:-$BASE_IMAGE_NAME-$IMAGE_FLAVOR}"
 ARG BASE_IMAGE="ghcr.io/ublue-os/${SOURCE_IMAGE}"
-ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-38}"
+ARG FEDORA_MAJOR_VERSION="${FEDORA_MAJOR_VERSION:-39}"
 
 FROM ${BASE_IMAGE}:${FEDORA_MAJOR_VERSION} AS bazzite
 
@@ -20,15 +20,13 @@ COPY system_files/desktop/shared system_files/desktop/${BASE_IMAGE_NAME} /
 COPY --from=ghcr.io/ublue-os/akmods:${AKMODS_FLAVOR}-${FEDORA_MAJOR_VERSION} /rpms /tmp/akmods-rpms
 RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo && \
     wget https://negativo17.org/repos/fedora-multimedia.repo -O /etc/yum.repos.d/negativo17-fedora-multimedia.repo && \
-    if [[ "${FEDORA_MAJOR_VERSION}" -ge "39" ]]; then \
-        rpm-ostree install \
-            /tmp/akmods-rpms/kmods/*xpadneo*.rpm \
-            /tmp/akmods-rpms/kmods/*xpad-noone*.rpm \
-            /tmp/akmods-rpms/kmods/*xone*.rpm \
-            /tmp/akmods-rpms/kmods/*openrazer*.rpm \
-            /tmp/akmods-rpms/kmods/*v4l2loopback*.rpm \
-            /tmp/akmods-rpms/kmods/*wl*.rpm \
-    ; fi && \
+    rpm-ostree install \
+        /tmp/akmods-rpms/kmods/*xpadneo*.rpm \
+        /tmp/akmods-rpms/kmods/*xpad-noone*.rpm \
+        /tmp/akmods-rpms/kmods/*xone*.rpm \
+        /tmp/akmods-rpms/kmods/*openrazer*.rpm \
+        /tmp/akmods-rpms/kmods/*v4l2loopback*.rpm \
+        /tmp/akmods-rpms/kmods/*wl*.rpm && \
     rpm-ostree install \
         /tmp/akmods-rpms/kmods/*gcadapter_oc*.rpm \
         /tmp/akmods-rpms/kmods/*nct6687*.rpm \
@@ -98,9 +96,12 @@ RUN rpm-ostree install \
         libxcrypt-compat \
         mesa-libGLU \
         vulkan-tools \
+        extest.i686 \
         twitter-twemoji-fonts \
+        google-noto-sans-cjk-fonts \
         lato-fonts \
         fira-code-fonts && \
+    ln -s /usr/share/fonts/google-noto-sans-cjk-fonts /usr/share/fonts/noto-cjk && \
     rpm-ostree install $(curl https://api.github.com/repos/charmbracelet/gum/releases/latest | jq -r '.assets[] | select(.name| test(".*.x86_64.rpm$")).browser_download_url') && \
     wget https://raw.githubusercontent.com/scaronni/steam-proton-mf-wmv/master/installcab.py -O /usr/bin/installcab && \
     wget https://github.com/scaronni/steam-proton-mf-wmv/blob/master/install-mf-wmv.sh -O /usr/bin/install-mf-wmv && \
@@ -109,112 +110,8 @@ RUN rpm-ostree install \
     wget https://gitlab.com/popsulfr/steamos-btrfs/-/raw/main/files/usr/lib/systemd/system/btrfs-dedup@.service -O /usr/lib/systemd/system/btrfs-dedup@.service && \
     wget https://gitlab.com/popsulfr/steamos-btrfs/-/raw/main/files/usr/lib/systemd/system/btrfs-dedup@.timer -O /usr/lib/systemd/system/btrfs-dedup@.timer
 
-# Configure KDE & GNOME
-RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
-    rpm-ostree override remove \
-        plasma-welcome \
-        qt5-qdbusviewer && \
-    rpm-ostree install \
-        steamdeck-kde-presets-desktop \
-        wallpaper-engine-kde-plugin \
-        kdeconnectd \
-        kdeplasma-addons \
-        rom-properties-kf5 && \
-    if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
-        rpm-ostree override replace \
-        --experimental \
-        --from repo=copr:copr.fedorainfracloud.org:kylegospo:gnome-vrr \
-            xorg-x11-server-Xwayland \
-    ; fi && \
-    if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
-        rpm-ostree install colord-kde \
-    ; fi && \
-    git clone https://github.com/maxiberta/kwin-system76-scheduler-integration.git --depth 1 /tmp/kwin-system76-scheduler-integration && \
-    git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git --depth 1 /tmp/wallpaper-engine-kde-plugin && \
-    kpackagetool5 --type=KWin/Script --global --install /tmp/kwin-system76-scheduler-integration && \
-    kpackagetool5 --type=Plasma/Wallpaper --global --install /tmp/wallpaper-engine-kde-plugin/plugin && \
-    rm -rf /tmp/kwin-system76-scheduler-integration && \
-    rm -rf /tmp/wallpaper-engine-kde-plugin && \
-    sed -i 's@After=plasma-core.target@After=plasma-core.target\nAfter=xdg-desktop-portal.service@g' /usr/lib/systemd/user/plasma-xdg-desktop-portal-kde.service \
-; else \
-    if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
-        rpm-ostree override replace \
-        --experimental \
-        --from repo=copr:copr.fedorainfracloud.org:kylegospo:gnome-vrr \
-            mutter \
-            mutter-common \
-            gnome-control-center \
-            gnome-control-center-filesystem \
-            xorg-x11-server-Xwayland && \
-        rpm-ostree install \
-            gnome-shell-extension-tailscale-status \
-    ; else \
-        rpm-ostree override replace \
-        --experimental \
-        --from repo=copr:copr.fedorainfracloud.org:kylegospo:gnome-vrr \
-            mutter \
-            mutter-common \
-            gnome-control-center \
-            gnome-control-center-filesystem && \
-        rpm-ostree install \
-            gnome-shell-extension-tailscale-gnome-qs \
-    ; fi && \
-    rpm-ostree install \
-        xwaylandvideobridge \
-        steamdeck-backgrounds \
-        gnome-randr-rust \
-        gnome-shell-extension-user-theme \
-        gnome-shell-extension-gsconnect \
-        nautilus-gsconnect \
-        gnome-shell-extension-system76-scheduler \
-        gnome-shell-extension-compiz-windows-effect \
-        gnome-shell-extension-just-perfection \
-        gnome-shell-extension-blur-my-shell \
-        gnome-shell-extension-hanabi \
-        gnome-shell-extension-gamerzilla \
-        rom-properties-gtk3 \
-        openssh-askpass && \
-    rpm-ostree override remove \
-        gnome-classic-session \
-        gnome-tour \
-        gnome-extensions-app \
-        gnome-initial-setup \
-; fi
-
-# Install gamescope-limiter patched Mesa and patched udisks2 (Needed for SteamOS SD card mounting)
-RUN if [[ "${FEDORA_MAJOR_VERSION}" -ge "39" ]]; then \
-        rpm-ostree override replace \
-            --experimental \
-            --from repo=copr:copr.fedorainfracloud.org:kylegospo:bazzite-multilib \
-                mesa-filesystem \
-                mesa-dri-drivers \
-                mesa-libEGL \
-                mesa-libEGL-devel \
-                mesa-libgbm \
-                mesa-libGL \
-                mesa-libglapi \
-                mesa-vulkan-drivers \
-    ; fi
-
-# Install ROCM and Waydroid on non-Nvidia images
-# Install Steam & Lutris on Nvidia images (Avoids numerous driver issues under Distrobox)
-RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
-    rpm-ostree install \
-        rocm-hip \
-        rocm-opencl \
-        rocm-clinfo \
-        waydroid \
-        weston && \
-    sed -i~ -E 's/=.\$\(command -v (nft|ip6?tables-legacy).*/=/g' /usr/lib/waydroid/data/scripts/waydroid-net.sh && \
-    rm -f /usr/etc/modprobe.d/nvidia.conf \
-; else \
-    rm -f /usr/etc/modprobe.d/amdgpu.conf && \
-    if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
-        rpm-ostree install \
-            mesa-libGL.i686 \
-            mesa-libEGL.i686 \
-    ; fi && \
-    rpm-ostree install \
+# Install Steam & Lutris, plus supporting packages
+RUN rpm-ostree install \
         vulkan-loader.i686 \
         alsa-lib.i686 \
         fontconfig.i686 \
@@ -237,7 +134,6 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         libdbusmenu-gtk3.i686 \
         libatomic.i686 \
         pipewire-alsa.i686 \
-        extest.i686 \
         clinfo && \
     sed -i '0,/enabled=0/s//enabled=1/' /etc/yum.repos.d/rpmfusion-nonfree-steam.repo && \
     sed -i '0,/enabled=1/s//enabled=0/' /etc/yum.repos.d/rpmfusion-nonfree.repo && \
@@ -264,12 +160,15 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
         vkBasalt.i686 \
         mangohud.x86_64 \
         mangohud.i686 \
+        vk_hdr_layer.x86_64 \
+        vk_hdr_layer.i686 \
         gperftools-libs.i686 && \
-    if [[ "${IMAGE_FLAVOR}" != "surface-nvidia" ]]; then \
+    if [[ ! "${IMAGE_FLAVOR}" =~ "surface" ]]; then \
         rpm-ostree install \
             obs-vkcapture.x86_64 \
             obs-vkcapture.i686 \
     ; fi && \
+    ln -s /usr/bin/wine64 /usr/bin/wine && \
     wget $(curl https://api.github.com/repos/ishitatsuyuki/LatencyFleX/releases/latest | jq -r '.assets[] | select(.name| test(".*.tar.xz$")).browser_download_url') -O /tmp/latencyflex.tar.xz && \
     mkdir -p /tmp/latencyflex && \
     tar --strip-components 1 -xvf /tmp/latencyflex.tar.xz -C /tmp/latencyflex && \
@@ -279,12 +178,96 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
     wget https://raw.githubusercontent.com/Shringe/LatencyFleX-Installer/main/install.sh -O /usr/bin/latencyflex && \
     sed -i 's@/usr/lib/wine/@/usr/lib64/wine/@g' /usr/bin/latencyflex && \
     sed -i 's@"dxvk.conf"@"/usr/share/latencyflex/dxvk.conf"@g' /usr/bin/latencyflex && \
-    chmod +x /usr/bin/latencyflex \
+    chmod +x /usr/bin/latencyflex
+
+# Configure KDE & GNOME
+RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
+    rpm-ostree override remove \
+        plasma-welcome \
+        qt5-qdbusviewer && \
+    rpm-ostree install \
+        steamdeck-kde-presets-desktop \
+        wallpaper-engine-kde-plugin \
+        kdeconnectd \
+        kdeplasma-addons \
+        rom-properties-kf5 && \
+    if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
+        rpm-ostree install colord-kde \
+    ; fi && \
+    git clone https://github.com/maxiberta/kwin-system76-scheduler-integration.git --depth 1 /tmp/kwin-system76-scheduler-integration && \
+    git clone https://github.com/catsout/wallpaper-engine-kde-plugin.git --depth 1 /tmp/wallpaper-engine-kde-plugin && \
+    kpackagetool5 --type=KWin/Script --global --install /tmp/kwin-system76-scheduler-integration && \
+    kpackagetool5 --type=Plasma/Wallpaper --global --install /tmp/wallpaper-engine-kde-plugin/plugin && \
+    rm -rf /tmp/kwin-system76-scheduler-integration && \
+    rm -rf /tmp/wallpaper-engine-kde-plugin \
+; else \
+    rpm-ostree override replace \
+    --experimental \
+    --from repo=copr:copr.fedorainfracloud.org:kylegospo:gnome-vrr \
+        mutter \
+        mutter-common \
+        gnome-control-center \
+        gnome-control-center-filesystem && \
+    rpm-ostree install \
+        gnome-shell-extension-tailscale-gnome-qs \
+        xwaylandvideobridge \
+        steamdeck-backgrounds \
+        gnome-randr-rust \
+        gnome-shell-extension-user-theme \
+        gnome-shell-extension-gsconnect \
+        nautilus-gsconnect \
+        gnome-shell-extension-system76-scheduler \
+        gnome-shell-extension-compiz-windows-effect \
+        gnome-shell-extension-just-perfection \
+        gnome-shell-extension-blur-my-shell \
+        gnome-shell-extension-hanabi \
+        gnome-shell-extension-gamerzilla \
+        rom-properties-gtk3 \
+        openssh-askpass && \
+    rpm-ostree override remove \
+        gnome-classic-session \
+        gnome-tour \
+        gnome-extensions-app \
+        gnome-initial-setup \
+; fi
+
+# Install gamescope-limiter patched Mesa
+RUN rpm-ostree override replace \
+    --experimental \
+    --from repo=copr:copr.fedorainfracloud.org:kylegospo:bazzite-multilib \
+        mesa-filesystem \
+        mesa-dri-drivers \
+        mesa-libEGL \
+        mesa-libEGL-devel \
+        mesa-libgbm \
+        mesa-libGL \
+        mesa-libglapi \
+        mesa-vulkan-drivers \
+        mesa-libOSMesa
+
+# Install Gamescope, ROCM, and Waydroid on non-Nvidia images
+RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
+    rpm-ostree install \
+        gamescope.x86_64 \
+        gamescope.i686 \
+        rocm-hip \
+        rocm-opencl \
+        rocm-clinfo \
+        waydroid \
+        weston && \
+    sed -i~ -E 's/=.\$\(command -v (nft|ip6?tables-legacy).*/=/g' /usr/lib/waydroid/data/scripts/waydroid-net.sh && \
+    rm -f /usr/etc/modprobe.d/nvidia.conf \
+; else \
+    rm -f /usr/etc/modprobe.d/amdgpu.conf \
 ; fi
 
 # Cleanup & Finalize
 COPY system_files/shared /
 RUN /tmp/image-info.sh && \
+    sed -i 's@/usr/bin/steam@/usr/bin/bazzite-steam@g' /usr/share/applications/steam.desktop && \
+    mkdir -p "/usr/etc/xdg/autostart" && \
+    cp "/usr/share/applications/steam.desktop" "/usr/etc/xdg/autostart/steam.desktop" && \
+    sed -i 's@/usr/bin/bazzite-steam %U@/usr/bin/bazzite-steam -silent %U@g' /usr/etc/xdg/autostart/steam.desktop && \
     rm /usr/share/applications/shredder.desktop && \
     rm /usr/share/vulkan/icd.d/lvp_icd.*.json && \
     mkdir -p "/usr/etc/profile.d/" && \
@@ -349,6 +332,8 @@ RUN /tmp/image-info.sh && \
         /var/* && \
     mkdir -p /var/tmp && \
     chmod -R 1777 /var/tmp && \
+    mkdir -p /var/lib/bluetooth && \
+    chmod -R 755 /var/lib/bluetooth && \
     ostree container commit
 
 FROM bazzite as bazzite-deck
@@ -375,26 +360,6 @@ RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo
 RUN rpm-ostree install \
     /etc/akmods-rpms/steamdeck.rpm && \
     rm -rf /etc/akmods-rpms
-
-RUN if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
-        rpm-ostree override replace \
-            --experimental \
-            --from repo=copr:copr.fedorainfracloud.org:kylegospo:bazzite-multilib \
-                mesa-filesystem \
-                mesa-dri-drivers \
-                mesa-libEGL \
-                mesa-libEGL-devel \
-                mesa-libgbm \
-                mesa-libGL \
-                mesa-libglapi \
-                mesa-vulkan-drivers && \
-        rpm-ostree override replace \
-            --experimental \
-            --from repo=copr:copr.fedorainfracloud.org:kylegospo:bazzite \
-                udisks2 \
-                libudisks2 \
-                udisks2-btrfs \
-    ; fi
 
 # Configure KDE & GNOME
 RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
@@ -423,13 +388,6 @@ RUN rpm-ostree install \
     ds-inhibit \
     steam_notif_daemon \
     ryzenadj \
-    latencyflex-vulkan-layer \
-    vkBasalt.x86_64 \
-    vkBasalt.i686 \
-    mangohud.x86_64 \
-    mangohud.i686 \
-    obs-vkcapture.x86_64 \
-    obs-vkcapture.i686 \
     sdgyrodsu \
     sddm-sugar-steamOS \
     ibus-pinyin \
@@ -440,6 +398,7 @@ RUN rpm-ostree install \
     zenity \
     newt \
     qt5-qtvirtualkeyboard \
+    xorg-x11-server-Xvfb \
     python-vdf \
     python-crcmod && \
     git clone https://gitlab.com/evlaV/jupiter-dock-updater-bin.git \
@@ -455,82 +414,19 @@ RUN rpm-ostree install \
     xz --check=crc32 /tmp/linux-firmware-neptune/cs35l41-dsp1-spk-{cali.bin,cali.wmfw,prot.bin,prot.wmfw} && \
     mv -vf /tmp/linux-firmware-neptune/* /usr/lib/firmware/cirrus/ && \
     rm -rf /tmp/linux-firmware-neptune && \
-    if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
-        rpm-ostree install \
-           mesa-va-drivers \ 
-    ; fi
+    wget $(jq -r '.assets[].browser_download_url | select(endswith("steam-patch"))' <<< $(curl -s 'https://api.github.com/repos/KyleGospo/steam-patch/releases' | jq -r "first(.[] | select(.prerelease == "false"))")) -O /usr/bin/steam-patch && \
+    chmod +x /usr/bin/steam-patch
 
-# Install Steam and Lutris into their own OCI layer
+# Install Gamescope Session & Supporting changes
 # Add bootstraplinux_ubuntu12_32.tar.xz used by gamescope-session (Thanks ChimeraOS! - https://chimeraos.org/)
-RUN rpm-ostree install \
-        vulkan-loader.i686 \
-        alsa-lib.i686 \
-        fontconfig.i686 \
-        gtk2.i686 \
-        libICE.i686 \
-        libnsl.i686 \
-        libxcrypt-compat.i686 \
-        libpng12.i686 \
-        libXext.i686 \
-        libXinerama.i686 \
-        libXtst.i686 \
-        libXScrnSaver.i686 \
-        NetworkManager-libnm.i686 \
-        nss.i686 \
-        pulseaudio-libs.i686 \
-        libcurl.i686 \
-        systemd-libs.i686 \
-        libva.i686 \
-        libvdpau.i686 \
-        libdbusmenu-gtk3.i686 \
-        libatomic.i686 \
-        pipewire-alsa.i686 && \
-    if [[ "${FEDORA_MAJOR_VERSION}" -lt "39" ]]; then \
-        rpm-ostree install \
-            mesa-dri-drivers.i686 \
-            mesa-vulkan-drivers.i686 \
-            mesa-libGL.i686 \
-            mesa-libEGL.i686 \
-    ; fi && \
-    sed -i '0,/enabled=0/s//enabled=1/' /etc/yum.repos.d/rpmfusion-nonfree-steam.repo && \
-    sed -i '0,/enabled=1/s//enabled=0/' /etc/yum.repos.d/rpmfusion-nonfree.repo && \
-    sed -i '0,/enabled=1/s//enabled=0/' /etc/yum.repos.d/rpmfusion-nonfree-updates.repo && \
-    sed -i '0,/enabled=1/s//enabled=0/' /etc/yum.repos.d/fedora-updates.repo && \
-    rpm-ostree install \
-        steam && \
-    sed -i '0,/enabled=1/s//enabled=0/' /etc/yum.repos.d/rpmfusion-nonfree-steam.repo && \
-    sed -i '0,/enabled=0/s//enabled=1/' /etc/yum.repos.d/rpmfusion-nonfree.repo && \
-    sed -i '0,/enabled=0/s//enabled=1/' /etc/yum.repos.d/rpmfusion-nonfree-updates.repo && \
-    sed -i '0,/enabled=0/s//enabled=1/' /etc/yum.repos.d/fedora-updates.repo && \
-    wget https://steamdeck-packages.steamos.cloud/archlinux-mirror/jupiter-main/os/x86_64/steam-jupiter-stable-1.0.0.76-1-x86_64.pkg.tar.zst -O /tmp/steam-jupiter.pkg.tar.zst && \
+# Remove Feral gamemode, System76-Scheduler supersedes this
+RUN wget https://steamdeck-packages.steamos.cloud/archlinux-mirror/jupiter-main/os/x86_64/steam-jupiter-stable-1.0.0.76-1-x86_64.pkg.tar.zst -O /tmp/steam-jupiter.pkg.tar.zst && \
     mkdir -p /usr/etc/first-boot && \
     tar -I zstd -xvf /tmp/steam-jupiter.pkg.tar.zst usr/lib/steam/bootstraplinux_ubuntu12_32.tar.xz -O > /usr/etc/first-boot/bootstraplinux_ubuntu12_32.tar.xz && \
     rm -f /tmp/steam-jupiter.pkg.tar.zst && \
     rpm-ostree install \
-        lutris \
-        wxGTK \
-        libFAudio \
-        gamescope.x86_64 \
-        gamescope.i686 \
         gamescope-session-plus \
-        gamescope-session-steam \
-        wine-core.x86_64 \
-        wine-core.i686 \
-        wine-pulseaudio.x86_64 \
-        wine-pulseaudio.i686 \
-        winetricks \
-        protontricks \
-        gperftools-libs.i686 && \
-    wget $(curl https://api.github.com/repos/ishitatsuyuki/LatencyFleX/releases/latest | jq -r '.assets[] | select(.name| test(".*.tar.xz$")).browser_download_url') -O /tmp/latencyflex.tar.xz && \
-    mkdir -p /tmp/latencyflex && \
-    tar --strip-components 1 -xvf /tmp/latencyflex.tar.xz -C /tmp/latencyflex && \
-    rm -f /tmp/latencyflex.tar.xz && \
-    cp -r /tmp/latencyflex/wine/usr/lib/wine/* /usr/lib64/wine/ && \
-    rm -rf /tmp/latencyflex && \
-    wget https://raw.githubusercontent.com/Shringe/LatencyFleX-Installer/main/install.sh -O /usr/bin/latencyflex && \
-    sed -i 's@/usr/lib/wine/@/usr/lib64/wine/@g' /usr/bin/latencyflex && \
-    sed -i 's@"dxvk.conf"@"/usr/share/latencyflex/dxvk.conf"@g' /usr/bin/latencyflex && \
-    chmod +x /usr/bin/latencyflex && \
+        gamescope-session-steam && \
     if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         rpm-ostree override remove \
             gamemode \
@@ -550,10 +446,6 @@ RUN /tmp/image-info.sh && \
     sed -i 's/870/817/' /usr/share/alsa/ucm2/AMD/acp5x/acp5x.conf && \
     sed -i 's/252/207/' /usr/share/alsa/ucm2/AMD/acp5x/acp5x.conf && \
     sed -i 's/192/207/' /usr/share/alsa/ucm2/AMD/acp5x/acp5x.conf && \
-    sed -i 's@/usr/bin/steam@/usr/bin/bazzite-steam@g' /usr/share/applications/steam.desktop && \
-    mkdir -p "/usr/etc/xdg/autostart" && \
-    cp "/usr/share/applications/steam.desktop" "/usr/etc/xdg/autostart/steam.desktop" && \
-    sed -i 's@/usr/bin/bazzite-steam %U@/usr/bin/bazzite-steam -silent %U@g' /usr/etc/xdg/autostart/steam.desktop && \
     if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         sed -i 's/Exec=.*/Exec=systemctl start return-to-gamemode.service/' /etc/skel.d/Desktop/Return.desktop \
     ; fi && \
@@ -592,4 +484,5 @@ RUN /tmp/image-info.sh && \
     mkdir -p /var/tmp && \
     chmod -R 1777 /var/tmp && \
     mkdir -p /var/lib/bluetooth && \
+    chmod -R 755 /var/lib/bluetooth && \
     ostree container commit
