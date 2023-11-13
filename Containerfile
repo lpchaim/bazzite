@@ -243,7 +243,12 @@ RUN rpm-ostree override replace \
         mesa-libGL \
         mesa-libglapi \
         mesa-vulkan-drivers \
-        mesa-libOSMesa
+        mesa-libOSMesa \
+        https://download.copr.fedorainfracloud.org/results/kylegospo/bazzite-multilib/fedora-39-x86_64/06620403-bluez/bluez-5.70-1.fc39.bazzite.0.0.git.1708.6d2818cf.x86_64.rpm \
+        https://download.copr.fedorainfracloud.org/results/kylegospo/bazzite-multilib/fedora-39-x86_64/06620403-bluez/bluez-cups-5.70-1.fc39.bazzite.0.0.git.1708.6d2818cf.x86_64.rpm \
+        https://download.copr.fedorainfracloud.org/results/kylegospo/bazzite-multilib/fedora-39-x86_64/06620403-bluez/bluez-libs-5.70-1.fc39.bazzite.0.0.git.1708.6d2818cf.x86_64.rpm \
+        https://download.copr.fedorainfracloud.org/results/kylegospo/bazzite-multilib/fedora-39-x86_64/06620403-bluez/bluez-obexd-5.70-1.fc39.bazzite.0.0.git.1708.6d2818cf.x86_64.rpm \
+        https://download.copr.fedorainfracloud.org/results/kylegospo/bazzite-multilib/fedora-39-i386/06620403-bluez/bluez-libs-5.70-1.fc39.bazzite.0.0.git.1708.6d2818cf.i686.rpm
 
 # Install Gamescope, ROCM, and Waydroid on non-Nvidia images
 RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
@@ -265,9 +270,6 @@ RUN if grep -qv "nvidia" <<< "${IMAGE_NAME}"; then \
 COPY system_files/shared /
 RUN /tmp/image-info.sh && \
     sed -i 's@/usr/bin/steam@/usr/bin/bazzite-steam@g' /usr/share/applications/steam.desktop && \
-    mkdir -p "/usr/etc/xdg/autostart" && \
-    cp "/usr/share/applications/steam.desktop" "/usr/etc/xdg/autostart/steam.desktop" && \
-    sed -i 's@/usr/bin/bazzite-steam %U@/usr/bin/bazzite-steam -silent %U@g' /usr/etc/xdg/autostart/steam.desktop && \
     rm /usr/share/applications/shredder.desktop && \
     rm /usr/share/vulkan/icd.d/lvp_icd.*.json && \
     mkdir -p "/usr/etc/profile.d/" && \
@@ -439,6 +441,9 @@ RUN wget https://steamdeck-packages.steamos.cloud/archlinux-mirror/jupiter-main/
 # Cleanup & Finalize
 COPY system_files/shared /
 RUN /tmp/image-info.sh && \
+    mkdir -p "/usr/etc/xdg/autostart" && \
+    cp "/usr/share/applications/steam.desktop" "/usr/etc/xdg/autostart/steam.desktop" && \
+    sed -i 's@/usr/bin/bazzite-steam %U@/usr/bin/bazzite-steam -silent %U@g' /usr/etc/xdg/autostart/steam.desktop && \
     rm /usr/share/applications/wine*.desktop && \
     ln -s /usr/bin/steamos-logger /usr/bin/steamos-info && \
     ln -s /usr/bin/steamos-logger /usr/bin/steamos-notice && \

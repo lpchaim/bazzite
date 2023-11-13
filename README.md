@@ -10,6 +10,7 @@
   - [Features for **Desktop** Images](https://github.com/ublue-os/bazzite#desktop)
   - [Features for **Steam Deck / HTPC** Images](https://github.com/ublue-os/bazzite#steam-deckhome-theater-pcs-htpcs)
   - [Features for **GNOME** Images](https://github.com/ublue-os/bazzite#gnome)
+  - [Features from Upstream](https://github.com/ublue-os/bazzite#features-from-upstream)
 - [Why & Frequently Asked Questions](https://github.com/ublue-os/bazzite#why)
 - [Showcase & Newsletter](https://github.com/ublue-os/bazzite#showcase)
 - [Custom Packages](https://github.com/ublue-os/bazzite#custom-packages)
@@ -90,7 +91,7 @@ Variant designed for usage as an alternative to SteamOS on the Steam Deck, and f
 - **Latest version of Mesa creates smaller shader caches and does not require them to prevent stutter.**
 - **Able to be booted even if the drive is full.**
 - **Support for every language supported by upstream Fedora.**
-- Optionally use Wayland on the desktop with [support for Steam input](https://github.com/Supreeeme/extest).
+- **Uses Wayland on the desktop with [support for Steam input](https://github.com/Supreeeme/extest).**
 - Features ported versions of most SteamOS packages, including drivers, firmware updaters, and fan controllers [from the evlaV repository](https://gitlab.com/evlaV).
 - Patched Mesa for proper framerate control from Gamescope.
 - Comes with patches from [SteamOS BTRFS](https://gitlab.com/popsulfr/steamos-btrfs) for full BTRFS support for the SD card by default.
@@ -109,7 +110,7 @@ Variant designed for usage as an alternative to SteamOS on the Steam Deck, and f
     - Service for low-risk undervolting of the Steam Deck via [RyzenAdj](https://github.com/FlyGoat/RyzenAdj) and [Ryzen SMU](https://gitlab.com/leogx9r/ryzen_smu), see `ryzenadj.service` and `/etc/default/ryzenadj`.
     - Service for limiting the max charge level of the battery, see `batterylimit.service` and `/etc/default/batterylimit`. <sup><sub>(Works even when the device is off)</sub></sup>
     - Built in support for display overclocking. For example, add `GAMESCOPE_OVERRIDE_REFRESH_RATE=40,70` to `/etc/environment`.
-    - Ability to enable Wayland on the desktop if desired by editing `/etc/default/desktop-wayland`.
+    - Ability to use X11 on the desktop if desired by editing `/etc/default/desktop-wayland`.
     - 32GB RAM mod your Steam Deck? Enjoy double the maximum VRAM amount, automatically applied. <sup><sub>(Can you share your soldering skills?)</sub></sup>
 - Steam Deck hardware-specific services can be disabled by running `ujust disable-deck-services` in the terminal, useful for trying this image on other handhelds or for use on HTPCs.
 
@@ -160,6 +161,24 @@ To rebase an existing ostree system to the **Steam Deck/HTPC** release:
 ```bash
 rpm-ostree rebase ostree-unverified-registry:ghcr.io/ublue-os/bazzite-deck-gnome:latest
 ```
+
+### Features from Upstream
+
+#### Universal Blue
+
+- Flathub is enabled by default.
+- [`just`](https://github.com/casey/just) commands for convenience.
+- Multi-media codecs out of the box.
+- Rollback Bazzite from any build within the last 90 days.
+
+#### Features from Fedora Linux (Kinoite & Silverblue)
+
+- A rock solid and stable base.
+- System packages stay relatively up to date.
+- Can layer Fedora packages to the image without losing them between updates.
+- Security focused with [SELinux](https://github.com/SELinuxProject/selinux) preinstalled and configured out of the box.
+- The ability to rebase to different Fedora libostree images, if desired, without losing user data.
+- Printing support thanks to [CUPS](https://www.cups.org/) being preinstalled.
 
 ## Why
 
