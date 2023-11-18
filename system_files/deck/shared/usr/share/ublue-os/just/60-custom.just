@@ -40,6 +40,8 @@ get-decky:
 # Install EmuDeck (https://www.emudeck.com/)
 get-emudeck:
   #!/usr/bin/env bash
+  IMAGE_INFO="/usr/share/ublue-os/image-info.json"
+  BASE_IMAGE_NAME=$(jq -r '."base-image-name"' < $IMAGE_INFO)
   echo 'Retrieving EmuDeck...'
   if [[ ${BASE_IMAGE_NAME} == 'silverblue' ]]; then
     wget https://www.emudeck.com/EmuDeck.desktop -O ~/.local/share/applications/EmuDeck.desktop
@@ -490,7 +492,8 @@ install-opentabletdriver:
   rm -f ~/.config/systemd/user/arch-opentabletdriver.service && \
   wget https://raw.githubusercontent.com/ublue-os/bazzite/main/post_install_files/OpenTabletDriver/opentabletdriver.service -O ~/.config/systemd/user/arch-opentabletdriver.service && \
   systemctl --user daemon-reload && \
-  systemctl enable --user --now arch-opentabletdriver.service
+  systemctl enable --user --now arch-opentabletdriver.service && \
+  distrobox enter -n arch -- 'distrobox-export --app otd-gui'
 
 # Create fedora distrobox if it doesn't exist
 [private]

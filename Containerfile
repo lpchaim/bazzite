@@ -35,7 +35,7 @@ RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo
         /tmp/akmods-rpms/kmods/*winesync*.rpm && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/negativo17-fedora-multimedia.repo && \
     mkdir -p /etc/akmods-rpms/ && \
-    mv /tmp/akmods-rpms/kmods/*steamdeck*.rpm /etc/akmods-rpms/steamdeck.rpm
+    mv /tmp/akmods-rpms/kmods/*steamdeck*.rpm /etc/akmods-rpms/
 
 # Setup Copr repos
 RUN wget https://copr.fedorainfracloud.org/coprs/kylegospo/bazzite/repo/fedora-$(rpm -E %fedora)/kylegospo-bazzite-fedora-$(rpm -E %fedora).repo -O /etc/yum.repos.d/_copr_kylegospo-bazzite.repo && \
@@ -362,7 +362,7 @@ RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo
 
 # Install Valve's Steam Deck drivers as kmod
 RUN rpm-ostree install \
-    /etc/akmods-rpms/steamdeck.rpm && \
+    /etc/akmods-rpms/*steamdeck*.rpm && \
     rm -rf /etc/akmods-rpms
 
 # Configure KDE & GNOME
@@ -394,6 +394,7 @@ RUN rpm-ostree install \
     ds-inhibit \
     steam_notif_daemon \
     ryzenadj \
+    steam-patch \
     sdgyrodsu \
     sddm-sugar-steamOS \
     ibus-pinyin \
@@ -419,9 +420,7 @@ RUN rpm-ostree install \
     wget https://gitlab.com/evlaV/linux-firmware-neptune/-/raw/jupiter/cs35l41-dsp1-spk-prot.wmfw -O /tmp/linux-firmware-neptune/cs35l41-dsp1-spk-prot.wmfw && \
     xz --check=crc32 /tmp/linux-firmware-neptune/cs35l41-dsp1-spk-{cali.bin,cali.wmfw,prot.bin,prot.wmfw} && \
     mv -vf /tmp/linux-firmware-neptune/* /usr/lib/firmware/cirrus/ && \
-    rm -rf /tmp/linux-firmware-neptune && \
-    wget $(jq -r '.assets[].browser_download_url | select(endswith("steam-patch"))' <<< $(curl -s 'https://api.github.com/repos/KyleGospo/steam-patch/releases' | jq -r "first(.[] | select(.prerelease == "false"))")) -O /usr/bin/steam-patch && \
-    chmod +x /usr/bin/steam-patch
+    rm -rf /tmp/linux-firmware-neptune
 
 # Install Gamescope Session & Supporting changes
 # Add bootstraplinux_ubuntu12_32.tar.xz used by gamescope-session (Thanks ChimeraOS! - https://chimeraos.org/)
