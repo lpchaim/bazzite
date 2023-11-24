@@ -19,15 +19,14 @@ COPY system_files/desktop/shared system_files/desktop/${BASE_IMAGE_NAME} /
 # Add ublue packages, add needed negativo17 repo and then immediately disable due to incompatibility with RPMFusion
 COPY --from=ghcr.io/ublue-os/akmods:${AKMODS_FLAVOR}-${FEDORA_MAJOR_VERSION} /rpms /tmp/akmods-rpms
 RUN sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/_copr_ublue-os-akmods.repo && \
-    wget https://negativo17.org/repos/fedora-multimedia.repo -O /etc/yum.repos.d/negativo17-fedora-multimedia.repo && \
+    sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/negativo17-fedora-multimedia.repo && \
     rpm-ostree install \
         /tmp/akmods-rpms/kmods/*xpadneo*.rpm \
         /tmp/akmods-rpms/kmods/*xpad-noone*.rpm \
         /tmp/akmods-rpms/kmods/*xone*.rpm \
         /tmp/akmods-rpms/kmods/*openrazer*.rpm \
         /tmp/akmods-rpms/kmods/*v4l2loopback*.rpm \
-        /tmp/akmods-rpms/kmods/*wl*.rpm && \
-    rpm-ostree install \
+        /tmp/akmods-rpms/kmods/*wl*.rpm \
         /tmp/akmods-rpms/kmods/*gcadapter_oc*.rpm \
         /tmp/akmods-rpms/kmods/*nct6687*.rpm \
         /tmp/akmods-rpms/kmods/*openrgb*.rpm \
@@ -73,9 +72,6 @@ RUN rpm-ostree install \
         xrandr \
         rmlint \
         compsize \
-        ddccontrol \
-        ddccontrol-gtk \
-        ddccontrol-db \
         input-remapper \
         system76-scheduler \
         hl2linux-selinux \
@@ -104,9 +100,10 @@ RUN rpm-ostree install \
         twitter-twemoji-fonts \
         google-noto-sans-cjk-fonts \
         lato-fonts \
-        fira-code-fonts && \
+        fira-code-fonts \
+        glow \
+        gum && \
     ln -s /usr/share/fonts/google-noto-sans-cjk-fonts /usr/share/fonts/noto-cjk && \
-    rpm-ostree install $(curl https://api.github.com/repos/charmbracelet/gum/releases/latest | jq -r '.assets[] | select(.name| test(".*.x86_64.rpm$")).browser_download_url') && \
     wget https://raw.githubusercontent.com/scaronni/steam-proton-mf-wmv/master/installcab.py -O /usr/bin/installcab && \
     wget https://github.com/scaronni/steam-proton-mf-wmv/blob/master/install-mf-wmv.sh -O /usr/bin/install-mf-wmv && \
     sed -i 's@python3 installcab.py@/usr/bin/installcab@g' /usr/bin/install-mf-wmv && \
@@ -166,7 +163,8 @@ RUN rpm-ostree install \
         mangohud.i686 \
         vk_hdr_layer.x86_64 \
         vk_hdr_layer.i686 \
-        gperftools-libs.i686 && \
+        gperftools-libs.i686 \
+        goverlay && \
     if [[ ! "${IMAGE_FLAVOR}" =~ "surface" ]]; then \
         rpm-ostree install \
             obs-vkcapture.x86_64 \
@@ -305,6 +303,7 @@ RUN /tmp/image-info.sh && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_kylegospo-rom-properties.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/_copr_principis-howdy.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/tailscale.repo && \
+    sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/charm.repo && \
     sed -i 's/#DefaultTimeoutStopSec.*/DefaultTimeoutStopSec=15s/' /etc/systemd/user.conf && \
     sed -i 's/#DefaultTimeoutStopSec.*/DefaultTimeoutStopSec=15s/' /etc/systemd/system.conf && \
     mkdir -p /usr/etc/flatpak/remotes.d && \
@@ -394,6 +393,8 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
 RUN rpm-ostree install \
     jupiter-fan-control \
     jupiter-hw-support-btrfs \
+    steamdeck-dsp \
+    galileo-mura \
     powerbuttond \
     HandyGCCS \
     vpower \
@@ -479,18 +480,22 @@ RUN /tmp/image-info.sh && \
         systemctl enable sddm.service \
     ; fi && \
     systemctl enable bazzite-autologin.service && \
-    systemctl enable jupiter-fan-control.service && \
     systemctl enable btrfs-dedup@run-media-mmcblk0p1.timer && \
-    systemctl enable vpower.service && \
     systemctl enable ds-inhibit.service && \
     systemctl enable cec-onboot.service && \
     systemctl enable cec-onpoweroff.service && \
     systemctl enable cec-onsleep.service && \
     systemctl --global enable steam-web-debug-portforward.service && \
-    systemctl --global enable sdgyrodsu.service && \
+    systemctl --global disable sdgyrodsu.service && \
     systemctl disable input-remapper.service && \
     systemctl disable ublue-update.timer && \
     systemctl disable handycon.service && \
+    systemctl disable jupiter-fan-control.service && \
+    systemctl disable vpower.service && \
+    systemctl disable jupiter-biosupdate.service && \
+    systemctl disable jupiter-controller-update.service && \
+    systemctl disable ryzenadj.service && \
+    systemctl disable batterylimit.service && \
     rm -f /usr/etc/sddm.conf && \
     rm -f /usr/etc/default/bazzite && \
     rm -rf \
