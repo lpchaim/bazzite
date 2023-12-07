@@ -107,7 +107,8 @@ RUN if [[ "${IMAGE_FLAVOR}" =~ "nvidia" ]]; then \
         lato-fonts \
         fira-code-fonts \
         glow \
-        gum && \
+        gum \
+        redhat-lsb-core && \
     ln -s /usr/share/fonts/google-noto-sans-cjk-fonts /usr/share/fonts/noto-cjk && \
     wget https://raw.githubusercontent.com/scaronni/steam-proton-mf-wmv/master/installcab.py -O /usr/bin/installcab && \
     wget https://github.com/scaronni/steam-proton-mf-wmv/blob/master/install-mf-wmv.sh -O /usr/bin/install-mf-wmv && \
@@ -128,6 +129,11 @@ RUN rpm-ostree override replace \
         pipewire-libs \
         pipewire-pulseaudio \
         pipewire-utils \
+        || true && \
+    rpm-ostree override replace \
+    --experimental \
+    --from repo=updates \
+        gnutls \
         || true && \
     rpm-ostree install \
         vulkan-loader.i686 \
@@ -204,6 +210,10 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
     rpm-ostree override remove \
         plasma-welcome \
         qt5-qdbusviewer && \
+    rpm-ostree override replace \
+    --experimental \
+    --from repo=copr:copr.fedorainfracloud.org:kylegospo:gnome-vrr \
+        xorg-x11-server-Xwayland && \
     rpm-ostree install \
         steamdeck-kde-presets-desktop \
         wallpaper-engine-kde-plugin \
@@ -226,7 +236,8 @@ RUN if grep -q "kinoite" <<< "${BASE_IMAGE_NAME}"; then \
         mutter \
         mutter-common \
         gnome-control-center \
-        gnome-control-center-filesystem && \
+        gnome-control-center-filesystem \
+        xorg-x11-server-Xwayland && \
     rpm-ostree install \
         gnome-shell-extension-tailscale-gnome-qs \
         steamdeck-backgrounds \
